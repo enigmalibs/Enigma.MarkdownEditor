@@ -1,6 +1,6 @@
 # BUG-18AD — Preview code spans barely visible
 
-**Status: IN PROGRESS** · 2 phases · Roadmap: `docs/roadmap.md`
+**Status: DONE** · 2 phases · Roadmap: `docs/roadmap.md`
 **Type:** BUG · **Branch:** one per phase, cut from the run branch at build time.
 **Run:** bugfix/2026-09-11-preview-code-spans
 
@@ -127,7 +127,7 @@ right answer.
 
 ## PHASE02 — Code-span chip padding
 
-**Status: TODO**
+**Status: DONE**
 
 ### Symptom
 
@@ -141,7 +141,7 @@ property (see *Context & constraints*).
 
 ### Steps
 
-1. In `MarkdownVisualBuilder.Code()`, wrap the content in one ` ` on each side, declared as a
+1. In `MarkdownVisualBuilder.Code()`, wrap the content in one `U+00A0` on each side, declared as a
    named constant. No-break rather than an ordinary space, so the chip can never be broken from its
    own padding at a line end, and `U+00A0` rather than a thin or figure space because it is the one
    fixed space every font carries — a missing glyph would put a tofu box inside the chip.
@@ -167,7 +167,7 @@ property (see *Context & constraints*).
 
 ### Acceptance criteria
 
-- A rendered `` a `code` span `` has one ` ` before and after the content inside the same
+- A rendered `` a `code` span `` has one `U+00A0` before and after the content inside the same
   background-bearing run.
 - Selecting a whole paragraph containing a chip and copying yields the code with no padding
   characters, and a paragraph containing an authored `&nbsp;` keeps it.
@@ -184,7 +184,7 @@ property (see *Context & constraints*).
 | Opaque or translucent fill | Translucent — white 20 % Dark, black 12 % Light | The chip also lands inside blockquotes and table headers; one alpha reads correctly over all three surfaces | Two opaque colours, which would need a third for every surface a chip can land on |
 | What "a lighter background" means | More contrast: lighter in Dark, darker in Light | A lighter chip on a white pane is *less* visible, which is the opposite of what was asked for | Literally lighter in both variants |
 | Whether fenced blocks and table headers move too | No — un-alias the span alone | Both already read correctly; they carry a border and real padding | Moving all three, an unrequested visual change to two other elements |
-| How the padding is made | ` ` inside the same run | The fill is the run's own background, so padding and text are one rectangle — no second box whose height has to be guessed, and none can be guessed here because the suite has no Skia to check it with | An `InlineUIContainer` chip (drops the code out of every drag-selected copy); `InlineUIContainer` spacers either side (unverifiable height match against the glyph run) |
+| How the padding is made | A `U+00A0` inside the same run | The fill is the run's own background, so padding and text are one rectangle — no second box whose height has to be guessed, and none can be guessed here because the suite has no Skia to check it with | An `InlineUIContainer` chip (drops the code out of every drag-selected copy); `InlineUIContainer` spacers either side (unverifiable height match against the glyph run) |
 | Clipboard fidelity | Record each pad's index at build time and drop it on copy | This is a markdown editor for developers: copying `git status` out of the preview has to yield exactly that | Leaving the pads in (corrupts a pasted command); stripping every `U+00A0` from the selection (an authored `&nbsp;` is a real `U+00A0` run, so that is lossy) |
 | Corner radius | Not done, recorded as a follow-up | Impossible on a text run, and the only way to fake it costs the copy path | Faking it with an `InlineUIContainer` |
 | Shape | One item, two phases | Colour and padding are independently reviewable and independently valuable | One commit across theme, XAML, builder, copy path and four test files |

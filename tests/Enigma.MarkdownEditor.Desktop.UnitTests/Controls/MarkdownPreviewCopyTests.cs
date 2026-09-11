@@ -134,6 +134,73 @@ public sealed class MarkdownPreviewCopyTests
     }
 
     [AvaloniaFact]
+    public void ACopySpanningACodeChip_LeavesTheChipsPaddingBehind()
+    {
+        // The trade the chip's padding is made on: it is two characters of the run's own text, so it
+        // would otherwise ride out on the clipboard — and the command someone pasted into a shell
+        // would have a no-break space glued to either end of it.
+        MarkdownPreview preview = Hosted("Run `git status` first.").Preview;
+        List<MarkdownCopyRequest> requests = Requests(preview);
+
+        SelectableTextBlock paragraph = Assert.Single(Texts(preview));
+        paragraph.SelectAll();
+
+        preview.RequestCopy();
+
+        Assert.Equal("Run git status first.", Assert.Single(requests).SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void ACopyOfProseHoldingAnAuthoredNoBreakSpace_KeepsIt()
+    {
+        // Why the padding is taken out by index rather than by searching for the character: a note
+        // that wrote &nbsp; meant it, and a copy that swept every U+00A0 out of the selection would
+        // be editing the reader's own words to tidy up after the renderer.
+        MarkdownPreview preview = Hosted("A&nbsp;B `x` C").Preview;
+        List<MarkdownCopyRequest> requests = Requests(preview);
+
+        SelectableTextBlock paragraph = Assert.Single(Texts(preview));
+        paragraph.SelectAll();
+
+        preview.RequestCopy();
+
+        Assert.Equal("A\u00A0B x C", Assert.Single(requests).SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void ACopyOfAParagraphWithNoChipInIt_IsHandedStraightBack()
+    {
+        MarkdownPreview preview = Hosted("A paragraph with words in it.").Preview;
+        List<MarkdownCopyRequest> requests = Requests(preview);
+
+        SelectableTextBlock paragraph = Assert.Single(Texts(preview));
+        paragraph.SelectAll();
+
+        preview.RequestCopy();
+
+        Assert.Equal("A paragraph with words in it.", Assert.Single(requests).SelectedText);
+    }
+
+    [AvaloniaFact]
+    public void ASelectionOfNothingButPadding_MeansTheNoteRatherThanAnEmptyClipboard()
+    {
+        // A drag over the sliver of chip to the left of its first glyph selected no content at all,
+        // and a copy with nothing selected means the note here.
+        MarkdownPreview preview = Hosted("Run `git status` first.").Preview;
+        List<MarkdownCopyRequest> requests = Requests(preview);
+
+        SelectableTextBlock paragraph = Assert.Single(Texts(preview));
+        paragraph.SelectionStart = 4;
+        paragraph.SelectionEnd = 5;
+
+        Assert.Equal(MarkdownCodePads.Pad, paragraph.SelectedText);
+
+        preview.RequestCopy();
+
+        Assert.False(Assert.Single(requests).IsSelection);
+    }
+
+    [AvaloniaFact]
     public void ACopyWithNothingSelected_AsksForTheWholeNote()
     {
         MarkdownPreview preview = Hosted(Document).Preview;

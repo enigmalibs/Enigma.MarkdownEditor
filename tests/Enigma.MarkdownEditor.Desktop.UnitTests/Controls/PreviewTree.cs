@@ -154,6 +154,31 @@ internal static class PreviewTree
     }
 
     /// <summary>
+    /// The code chips inside <paramref name="block"/>, at any depth.
+    /// </summary>
+    /// <remarks>
+    /// By the class the renderer puts on them, never by their text: a chip's text carries the
+    /// padding that makes it a chip (see <see cref="MarkdownCodePads"/>), so a test looking for the
+    /// run that says <c>code</c> would not find one.
+    /// </remarks>
+    public static IReadOnlyList<Run> CodeSpans(TextBlock block)
+        => [.. Inlines<Run>(block).Where(run => run.Classes.Contains(MarkdownPreviewTheme.CodeSpanClass))];
+
+    /// <summary>
+    /// The text of <paramref name="run"/> as the document wrote it — without the padding, when it is
+    /// a code chip.
+    /// </summary>
+    public static string Unpadded(Run run)
+    {
+        string text = run.Text ?? string.Empty;
+
+        return run.Classes.Contains(MarkdownPreviewTheme.CodeSpanClass)
+            && (text.Length >= MarkdownCodePads.Pad.Length * 2)
+                ? text[MarkdownCodePads.Pad.Length..^MarkdownCodePads.Pad.Length]
+                : text;
+    }
+
+    /// <summary>
     /// Every inline of type <typeparamref name="T"/> inside <paramref name="block"/>, at any depth.
     /// </summary>
     public static IReadOnlyList<T> Inlines<T>(TextBlock block)
@@ -198,8 +223,11 @@ internal static class PreviewTree
         {
             switch (inline)
             {
+                // Unpadded, because what a block "reads as" is what the document said: the two
+                // characters either side of a chip are this renderer's, and a test asserting a
+                // sentence should no more see them than the reader's clipboard does.
                 case Run run:
-                    text.Append(run.Text);
+                    text.Append(Unpadded(run));
                     break;
                 case LineBreak:
                     text.Append('\n');

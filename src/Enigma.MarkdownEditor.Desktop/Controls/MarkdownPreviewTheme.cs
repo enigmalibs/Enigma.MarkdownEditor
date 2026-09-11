@@ -114,6 +114,15 @@ public static class MarkdownPreviewTheme
     public const string CodeBlockClass = "previewCode";
 
     /// <summary>
+    /// The class the run behind a code span carries.
+    /// </summary>
+    /// <remarks>
+    /// A chip is otherwise only tellable from prose by having a background, which is a property
+    /// anything could grow. The class is what says it on purpose.
+    /// </remarks>
+    public const string CodeSpanClass = "previewCodeSpan";
+
+    /// <summary>
     /// The class a rendered table carries.
     /// </summary>
     public const string TableClass = "previewTable";
