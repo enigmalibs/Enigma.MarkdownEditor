@@ -50,7 +50,14 @@ public static class MarkdownPreviewTheme
     /// <summary>
     /// Behind a code span, so it reads as a chip inside the sentence.
     /// </summary>
-    public const string CodeBackgroundKey = "EnigmaSurfaceHighBrush";
+    /// <remarks>
+    /// The one colour in the preview that is not the Enigma palette's. That palette is a ramp of
+    /// surfaces meant to sit <em>behind</em> content, and a code span is the one thing here that has
+    /// to stand out <em>inside</em> a paragraph: painted with a ramp step it came out one step from
+    /// the pane it is drawn on, which is near enough to invisible. The key is defined per variant in
+    /// <c>Themes/PreviewBrushes.axaml</c>, which says why it is translucent.
+    /// </remarks>
+    public const string CodeBackgroundKey = "MarkdownPreviewCodeSpanBackgroundBrush";
 
     /// <summary>
     /// Behind a block quote — a shade off the page rather than a panel.
@@ -61,15 +68,17 @@ public static class MarkdownPreviewTheme
     /// Behind a fenced code block, and behind a table's header row.
     /// </summary>
     /// <remarks>
-    /// The same surface a code span sits on, aliased rather than repeated: all three are the palette
-    /// saying "this is not prose", and giving them separate keys would only invite them to drift
-    /// apart. The alias is what the renderer names, so a future palette that does distinguish them
-    /// changes here and nowhere else.
+    /// A surface, where a code span is not: both of these are a block the width of the pane, set off
+    /// by a border and real padding, and a shade off the page is all the separation such a block
+    /// needs. The two were once the same key as <see cref="CodeBackgroundKey"/> — they read alike,
+    /// after all — but a chip inside a sentence has nothing to be read against but the sentence, and
+    /// the shared key is what left it invisible. The alias between these two stays: a fence and a
+    /// header row really are one surface under two names.
     /// </remarks>
-    public const string CodeBlockBackgroundKey = CodeBackgroundKey;
+    public const string CodeBlockBackgroundKey = "EnigmaSurfaceHighBrush";
 
     /// <inheritdoc cref="CodeBlockBackgroundKey"/>
-    public const string TableHeaderBackgroundKey = CodeBackgroundKey;
+    public const string TableHeaderBackgroundKey = CodeBlockBackgroundKey;
 
     /// <summary>
     /// Behind the chip that says a note has front matter — the quietest surface there is, because the
@@ -120,7 +129,9 @@ public static class MarkdownPreviewTheme
     /// <remarks>
     /// A renamed key in the theme package costs one wrong colour at runtime and nothing else — every
     /// visual falls back to an inherited brush — which is exactly the kind of quiet regression worth
-    /// one test.
+    /// one test. <see cref="CodeBackgroundKey"/> is in the list for a second reason: it is this
+    /// project's own key rather than the package's, so the test is also what proves the dictionary
+    /// holding it was merged at all, and merged for both variants.
     /// <para>
     /// The aliases above are deliberately absent: they are the same key strings under a second name,
     /// and listing them would say nothing more about the palette while breaking the assertion that
@@ -134,6 +145,7 @@ public static class MarkdownPreviewTheme
         ForegroundTertiaryKey,
         AccentKey,
         CodeBackgroundKey,
+        CodeBlockBackgroundKey,
         QuoteBackgroundKey,
         BorderSubtleKey,
         ErrorBackgroundKey,

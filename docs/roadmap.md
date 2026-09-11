@@ -80,8 +80,8 @@
 | - PHASE03    | Tab colours                        | DONE        | (in FEATURE-A225.md)      |
 | FEATURE-3505 | Vim o/O continues list items       | DONE        | docs/plan/FEATURE-3505.md |
 | FEATURE-8381 | Release 1.6.0                      | DONE        | docs/plan/FEATURE-8381.md |
-| BUG-18AD     | Preview code spans barely visible  | TODO        | docs/plan/BUG-18AD.md     |
-| - PHASE01    | Code-span chip gets its own colour | TODO        | (in BUG-18AD.md)          |
+| BUG-18AD     | Preview code spans barely visible  | IN PROGRESS | docs/plan/BUG-18AD.md     |
+| - PHASE01    | Code-span chip gets its own colour | DONE        | (in BUG-18AD.md)          |
 | - PHASE02    | Code-span chip padding             | TODO        | (in BUG-18AD.md)          |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`

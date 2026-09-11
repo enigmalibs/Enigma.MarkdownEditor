@@ -24,6 +24,12 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://Enigma.Avalonia.Desktop/Themes/Fluent.axaml" />
+        <!-- After the Enigma dictionary, per the rule above. This one adds a key rather than
+             overriding one, so the order costs nothing today - but it is where an override would
+             go, and a dictionary that has to be second is not one to leave sitting first.
+             HeadlessTestApp merges the same two, in the same order, so the test suite resolves the
+             palette this application actually has. -->
+        <ResourceInclude Source="avares://Enigma.MarkdownEditor.Desktop/Themes/PreviewBrushes.axaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>
