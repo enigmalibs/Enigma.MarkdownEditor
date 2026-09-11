@@ -72,7 +72,7 @@ public sealed class MarkdownPreviewTypographyTests
         SelectableTextBlock paragraph =
             PreviewTree.Block<SelectableTextBlock>("a `code` span", typography: Chosen);
 
-        Run code = Assert.Single(PreviewTree.Inlines<Run>(paragraph), run => run.Text == "code");
+        Run code = Assert.Single(PreviewTree.CodeSpans(paragraph));
 
         Assert.Equal(new FontFamily(Code), code.FontFamily);
 
@@ -119,10 +119,9 @@ public sealed class MarkdownPreviewTypographyTests
         Assert.All(cells, cell => Assert.False(cell.IsSet(TextBlock.FontFamilyProperty)));
 
         // The one span that was written as code is the one that follows the code family.
-        Run code = Assert.Single(
-            cells.SelectMany(PreviewTree.Inlines<Run>),
-            run => run.Text == "family");
+        Run code = Assert.Single(cells.SelectMany(PreviewTree.CodeSpans));
 
+        Assert.Equal("family", PreviewTree.Unpadded(code));
         Assert.Equal(new FontFamily(Code), code.FontFamily);
     }
 
@@ -189,7 +188,7 @@ public sealed class MarkdownPreviewTypographyTests
             typography: MarkdownPreviewTypography.Default);
 
         SelectableTextBlock paragraph = Assert.IsType<SelectableTextBlock>(Assert.Single(preview.Blocks));
-        Run code = Assert.Single(PreviewTree.Inlines<Run>(paragraph), run => run.Text == "code");
+        Run code = Assert.Single(PreviewTree.CodeSpans(paragraph));
 
         Assert.False(preview.IsSet(TemplatedControl.FontFamilyProperty));
         Assert.False(code.IsSet(TextElement.FontFamilyProperty));

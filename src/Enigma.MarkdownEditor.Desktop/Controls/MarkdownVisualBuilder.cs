@@ -697,10 +697,11 @@ internal sealed class MarkdownVisualBuilder
         };
 
         MarkdownLinkRegions links = new();
+        MarkdownCodePads pads = new();
 
         if (text.Inlines is { } target)
         {
-            Append(target, inlines, origin: 0, links);
+            Append(target, inlines, origin: 0, links, pads);
         }
 
         // Only where there is something to click. Most of a note is paragraphs with no links in them,
@@ -708,6 +709,13 @@ internal sealed class MarkdownVisualBuilder
         if (links.Count > 0)
         {
             links.Attach(text, _onLinkActivated);
+        }
+
+        // Same rule, same reason: a paragraph with no code span in it has nothing for a copy to take
+        // back out, so it is left carrying nothing.
+        if (pads.Count > 0)
+        {
+            pads.Attach(text);
         }
 
         return text;
@@ -718,7 +726,12 @@ internal sealed class MarkdownVisualBuilder
     /// so a link nested inside emphasis still records where it is on screen rather than where it is
     /// inside its span.
     /// </param>
-    private void Append(InlineCollection target, MarkdigInline? first, int origin, MarkdownLinkRegions links)
+    private void Append(
+        InlineCollection target,
+        MarkdigInline? first,
+        int origin,
+        MarkdownLinkRegions links,
+        MarkdownCodePads pads)
     {
         bool afterTaskBox = false;
 
@@ -741,7 +754,7 @@ internal sealed class MarkdownVisualBuilder
             // that whatever an inline turns out to contribute to the laid-out text — two characters
             // for a line break, none for an image — is what the link range says it did.
             int before = target.Text?.Length ?? 0;
-            UiInline? converted = Convert(current, origin + before, links);
+            UiInline? converted = Convert(current, origin + before, links, pads);
 
             if (afterTaskBox)
             {
@@ -764,6 +777,15 @@ internal sealed class MarkdownVisualBuilder
             {
                 links.Add(origin + before, (target.Text?.Length ?? 0) - before, url);
             }
+
+            // A chip's first and last character are its padding, not the document's (see Code). Read
+            // off the same two measurements a link range is, so a chip nested in emphasis or in a
+            // link records where it actually landed rather than where the markdown put it.
+            if (current is CodeInline)
+            {
+                pads.Add(origin + before);
+                pads.Add(origin + (target.Text?.Length ?? 0) - 1);
+            }
         }
     }
 
@@ -774,7 +796,11 @@ internal sealed class MarkdownVisualBuilder
         _ => null,
     };
 
-    private UiInline? Convert(MarkdigInline inline, int start, MarkdownLinkRegions links)
+    private UiInline? Convert(
+        MarkdigInline inline,
+        int start,
+        MarkdownLinkRegions links,
+        MarkdownCodePads pads)
     {
         switch (inline)
         {
@@ -782,7 +808,7 @@ internal sealed class MarkdownVisualBuilder
                 return new Run(literal.Content.ToString());
 
             case EmphasisInline emphasis:
-                return Emphasis(emphasis, start, links);
+                return Emphasis(emphasis, start, links, pads);
 
             case CodeInline code:
                 return Code(code);
@@ -791,10 +817,10 @@ internal sealed class MarkdownVisualBuilder
                 return new InlineUIContainer(ImageVisual(image));
 
             case LinkInline link:
-                return Link(link.Url, link, start, links);
+                return Link(link.Url, link, start, links, pads);
 
             case AutolinkInline autolink:
-                return Link(autolink.Url, container: null, start, links);
+                return Link(autolink.Url, container: null, start, links, pads);
 
             case LineBreakInline line:
                 // A soft break is a space: the paragraph is wrapped by the pane's width, not by where
@@ -817,7 +843,7 @@ internal sealed class MarkdownVisualBuilder
 
             case ContainerInline nested:
                 Span span = new();
-                Append(span.Inlines, nested, start, links);
+                Append(span.Inlines, nested, start, links, pads);
                 return span;
 
             default:
@@ -825,7 +851,11 @@ internal sealed class MarkdownVisualBuilder
         }
     }
 
-    private UiInline Emphasis(EmphasisInline emphasis, int start, MarkdownLinkRegions links)
+    private UiInline Emphasis(
+        EmphasisInline emphasis,
+        int start,
+        MarkdownLinkRegions links,
+        MarkdownCodePads pads)
     {
         Span span = new();
 
@@ -844,14 +874,21 @@ internal sealed class MarkdownVisualBuilder
 
         // Nested rather than flattened, so `***both***` — which Markdig models as one emphasis inside
         // another — comes out bold and italic instead of only the outer one.
-        Append(span.Inlines, emphasis, start, links);
+        Append(span.Inlines, emphasis, start, links, pads);
 
         return span;
     }
 
     private UiInline Code(CodeInline code)
     {
-        Run run = new(code.Content);
+        // A no-break space either side, because an inline has no padding to set and a chip whose
+        // background stops at the first and last glyph reads as a colour change rather than as a
+        // chip. In the run's own text rather than beside it: the fill is the run's background, so
+        // padding and text come out as one rectangle with no second box to align against the glyphs.
+        // What it costs is a clipboard, and MarkdownCodePads is what pays it back.
+        Run run = new(MarkdownCodePads.Pad + code.Content + MarkdownCodePads.Pad);
+
+        run.Classes.Add(MarkdownPreviewTheme.CodeSpanClass);
 
         // The size as well as the family, unlike when the code size was derived from the prose one:
         // the point of a setting for it is that every piece of code obeys it, and a span left to
@@ -878,13 +915,18 @@ internal sealed class MarkdownVisualBuilder
         }
     }
 
-    private UiInline Link(string? url, ContainerInline? container, int start, MarkdownLinkRegions links)
+    private UiInline Link(
+        string? url,
+        ContainerInline? container,
+        int start,
+        MarkdownLinkRegions links,
+        MarkdownCodePads pads)
     {
         Span span = new() { TextDecorations = TextDecorations.Underline };
 
         MarkdownPreviewTheme.BindBrush(span, TextElement.ForegroundProperty, MarkdownPreviewTheme.AccentKey);
 
-        Append(span.Inlines, container, start, links);
+        Append(span.Inlines, container, start, links, pads);
 
         // An autolink carries no children — the address IS the text.
         if (span.Inlines.Count == 0)
