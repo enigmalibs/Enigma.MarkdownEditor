@@ -1,6 +1,6 @@
 # BUG-18AD — Preview code spans barely visible
 
-**Status: TODO** · 2 phases · Roadmap: `docs/roadmap.md`
+**Status: IN PROGRESS** · 2 phases · Roadmap: `docs/roadmap.md`
 **Type:** BUG · **Branch:** one per phase, cut from the run branch at build time.
 **Run:** bugfix/2026-09-11-preview-code-spans
 
@@ -78,7 +78,7 @@ Established by reading the code, not assumed.
 
 ## PHASE01 — Code-span chip gets its own colour
 
-**Status: TODO**
+**Status: DONE**
 
 ### Symptom
 

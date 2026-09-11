@@ -65,7 +65,7 @@ public sealed class MarkdownPreviewThemeTests
         });
 
     [AvaloniaFact]
-    public void ACodeSpan_IsPaintedWithTheThemesSurfaceInEitherVariant()
+    public void ACodeSpan_IsPaintedWithTheChipColourInEitherVariant()
         => InEachVariant(variant =>
         {
             SelectableTextBlock paragraph = PreviewTree.Block<SelectableTextBlock>("a `code` span");
@@ -75,6 +75,38 @@ public sealed class MarkdownPreviewThemeTests
 
             Assert.Equal(Brush(MarkdownPreviewTheme.CodeBackgroundKey, variant), code.Background?.ToString());
         });
+
+    [AvaloniaFact]
+    public void ACodeSpan_IsNoLongerPaintedLikeTheBlockAroundIt()
+        => InEachVariant(variant =>
+        {
+            // The regression this whole item is about. A chip inside a sentence has nothing to be
+            // read against but the sentence, so it cannot share the surface a fenced block uses —
+            // that surface is one step off the pane, and one step is what made the chip invisible.
+            // Asserted as "different from", not as a colour: what the two are is the palette's
+            // business, that they are not the same thing is this renderer's.
+            Assert.NotEqual(
+                Brush(MarkdownPreviewTheme.CodeBlockBackgroundKey, variant),
+                Brush(MarkdownPreviewTheme.CodeBackgroundKey, variant));
+
+            SelectableTextBlock paragraph = PreviewTree.Block<SelectableTextBlock>("a `code` span");
+            Run chip = Assert.Single(
+                PreviewTree.Inlines<Run>(paragraph),
+                run => run.Background is not null);
+            MarkdownCodeBlock fence = PreviewTree.Block<MarkdownCodeBlock>("```\ncode\n```");
+
+            Assert.NotEqual(fence.Background?.ToString(), chip.Background?.ToString());
+        });
+
+    [AvaloniaFact]
+    public void AFencedBlockAndATableHeader_KeepTheSurfaceTheyAlwaysHad()
+    {
+        // The un-aliasing moved the code span alone. Both of these read correctly already — they are
+        // blocks the width of the pane, with a border and real padding around them — and re-colouring
+        // them would be a change nobody asked for.
+        Assert.Equal("EnigmaSurfaceHighBrush", MarkdownPreviewTheme.CodeBlockBackgroundKey);
+        Assert.Equal(MarkdownPreviewTheme.CodeBlockBackgroundKey, MarkdownPreviewTheme.TableHeaderBackgroundKey);
+    }
 
     [AvaloniaFact]
     public void SwitchingVariant_RepaintsWithoutRebuildingTheTree()

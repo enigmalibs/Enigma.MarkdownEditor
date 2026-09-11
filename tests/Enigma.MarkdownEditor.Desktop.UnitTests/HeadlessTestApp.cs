@@ -73,5 +73,13 @@ public sealed class HeadlessTestApp : Application
         {
             Source = new Uri("avares://Enigma.Avalonia.Desktop/Themes/Fluent.axaml"),
         });
+
+        // The application's own dictionary, merged after the Enigma one exactly as App.axaml merges
+        // it. It holds the keys the palette does not define — the code-span chip — so a suite
+        // without it would assert against a preview palette the application never has.
+        Resources.MergedDictionaries.Add(new ResourceInclude((Uri?)null)
+        {
+            Source = new Uri("avares://Enigma.MarkdownEditor.Desktop/Themes/PreviewBrushes.axaml"),
+        });
     }
 }
