@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.FileNamePromptView"
+             x:DataType="vm:FileNamePromptViewModel"
+             Width="420">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.error">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaErrorBrush}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Spacing="6">
+    <!-- UpdateSourceTrigger=PropertyChanged: the name is checked as it is typed, so the confirm
+         button and the message below it follow every keystroke rather than the focus. -->
+    <TextBox x:Name="NameBox"
+             Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             KeyDown="OnNameBoxKeyDown" />
+
+    <TextBlock Classes="error"
+               IsVisible="{Binding HasError}"
+               Text="{Binding Error}" />
+  </StackPanel>
+</UserControl>

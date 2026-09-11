@@ -1,0 +1,549 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+        xmlns:views="using:Enigma.MarkdownEditor.Desktop.Views"
+        xmlns:controls="using:Enigma.Avalonia.Desktop.Controls"
+        xmlns:contentDialog="using:Enigma.Avalonia.Desktop.Controls.ContentDialog"
+        xmlns:infoBar="using:Enigma.Avalonia.Desktop.Controls.InfoBar"
+        xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+        xmlns:preview="using:Enigma.MarkdownEditor.Desktop.Controls"
+        x:Class="Enigma.MarkdownEditor.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Icon="/Assets/app.ico"
+        Width="1280" Height="800"
+        MinWidth="720" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource EnigmaBackgroundBrush}">
+
+  <Window.Styles>
+    <!-- Slim square toolbar buttons; the Fluent default is sized for touch. `:is(Button)` so the
+         selector reaches ToggleButton too — a bare `Button` selector matches that type alone. -->
+    <Style Selector=":is(Button).toolbar">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <!-- Pane caption: small, quiet, uppercase. -->
+    <Style Selector="TextBlock.paneHeader">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="Margin" Value="12,8" />
+    </Style>
+    <!-- "Nothing here yet" text, replaced by real content in later work items. -->
+    <Style Selector="TextBlock.placeholder">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="16" />
+    </Style>
+    <Style Selector="TextBlock.status">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="10,0" />
+    </Style>
+    <!-- The ex/search line. Monospaced and in the ordinary foreground rather than the quiet one,
+         because it is the only thing in this bar that is being typed rather than reported — and
+         because ':' and '/' have to be told apart from each other at a glance. -->
+    <Style Selector="TextBlock.status.commandLine">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, monospace" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundBrush}" />
+    </Style>
+    <!-- The vim mode indicator: a chip rather than a word, so the mode is readable out of the corner
+         of an eye. Three looks — quiet for normal, green for insert, amber for either visual mode.
+         The greens and ambers are the InfoBar's own success and warning pairs: not a success and not a
+         warning, but the two accents the palette already carries, and the pair a status chip can be
+         told apart by at a glance. -->
+    <Style Selector="Border.vimMode">
+      <Setter Property="Background" Value="{DynamicResource EnigmaHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource EnigmaBorderSubtleBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="Margin" Value="8,3" />
+    </Style>
+    <Style Selector="Border.vimMode > TextBlock">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.vimMode.insert">
+      <Setter Property="Background" Value="{DynamicResource EnigmaSuccessBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource EnigmaSuccessBorderBrush}" />
+    </Style>
+    <Style Selector="Border.vimMode.insert > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaSuccessBrush}" />
+    </Style>
+    <Style Selector="Border.vimMode.visual">
+      <Setter Property="Background" Value="{DynamicResource EnigmaWarningBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource EnigmaWarningBorderBrush}" />
+    </Style>
+    <Style Selector="Border.vimMode.visual > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaWarningBrush}" />
+    </Style>
+    <Style Selector="GridSplitter.pane">
+      <Setter Property="Width" Value="4" />
+      <Setter Property="ResizeDirection" Value="Columns" />
+      <Setter Property="Background" Value="{DynamicResource EnigmaBorderSubtleBrush}" />
+    </Style>
+    <!-- The view-mode group: three toggles that behave as radio buttons, drawn as one control. The
+         border is what makes them read as a group rather than as three unrelated buttons — rounded
+         and clipped outside, square and borderless inside. -->
+    <Style Selector="Border.segmented">
+      <Setter Property="BorderBrush" Value="{DynamicResource EnigmaBorderSubtleBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="ClipToBounds" Value="True" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.segmented ToggleButton">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <!-- The same group one column to the left, stretched across the sidebar: the two tabs share the
+         pane's width rather than sitting in a toolbar's worth of it. -->
+    <Style Selector="Border.segmented.tabs">
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Margin" Value="8,8,8,2" />
+    </Style>
+    <Style Selector="Border.segmented.tabs ToggleButton">
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <!-- The workspace switcher: wider than a toolbar icon, because it carries a name. -->
+    <Style Selector="Button.workspace">
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <!-- One clickable row inside the switcher flyout. -->
+    <Style Selector="Button.flyoutRow">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TextBlock.flyoutDetail">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.flyoutHint">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="4,0,4,4" />
+    </Style>
+    <!-- Smaller than a toolbar button: these sit inside a pane's caption row, not in the window's
+         own toolbar, and have to read as secondary to it. -->
+    <Style Selector=":is(Button).paneAction">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <!-- The editor's own shortcuts. They live on the window rather than on the pane so they work
+       wherever the focus is — including in the tree, where Ctrl+S after a rename is a reflex.
+       Ctrl+Tab is deliberately absent: focus navigation claims it before a key binding is reached,
+       so the code-behind takes it during the tunnel instead. -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding Documents.SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding Documents.SaveAllCommand}" />
+    <KeyBinding Gesture="Ctrl+W" Command="{Binding Documents.CloseCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+V" Command="{Binding CycleViewModeCommand}" />
+  </Window.KeyBindings>
+
+  <!-- Root Panel z-stacks its children, so the three Enigma host controls must stay LAST: they
+       overlay everything the app draws. Their x:Names are what App.axaml.cs hands to RegisterHost. -->
+  <Panel>
+    <Grid RowDefinitions="Auto,*,Auto">
+
+      <!-- Toolbar -->
+      <Border Grid.Row="0"
+              Height="38"
+              Background="{DynamicResource EnigmaSurfaceBrush}"
+              BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="Auto,*,Auto" Margin="6,0">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <ToggleButton Classes="toolbar"
+                          IsChecked="{Binding IsSidebarVisible}"
+                          ToolTip.Tip="Show or hide the workspace sidebar">
+              <ei:Icon Kind="SidebarSimple" Size="16" />
+            </ToggleButton>
+            <Border Width="1" Margin="4,7" Background="{DynamicResource EnigmaBorderSubtleBrush}" />
+
+            <!-- Which panes are shown. Three toggles rather than one preview switch, because the
+                 middle pane can be hidden too and the two are one choice: a window with neither in
+                 it is not an arrangement anyone wants, and two independent switches could ask for it.
+                 Ctrl+Shift+V walks the same three in the same order. -->
+            <Border Classes="segmented">
+              <StackPanel Orientation="Horizontal">
+                <ToggleButton Classes="toolbar"
+                              IsChecked="{Binding IsEditorOnly}"
+                              ToolTip.Tip="Editor only (Ctrl+Shift+V cycles)">
+                  <ei:Icon Kind="NotePencil" Size="16" />
+                </ToggleButton>
+                <ToggleButton Classes="toolbar"
+                              IsChecked="{Binding IsSplit}"
+                              ToolTip.Tip="Editor and preview side by side (Ctrl+Shift+V cycles)">
+                  <ei:Icon Kind="Columns" Size="16" />
+                </ToggleButton>
+                <ToggleButton Classes="toolbar"
+                              IsChecked="{Binding IsPreviewOnly}"
+                              ToolTip.Tip="Preview only (Ctrl+Shift+V cycles)">
+                  <ei:Icon Kind="Article" Size="16" />
+                </ToggleButton>
+              </StackPanel>
+            </Border>
+
+            <Border Width="1" Margin="4,7" Background="{DynamicResource EnigmaBorderSubtleBrush}" />
+
+            <!-- The switcher. Its flyout is the only place a workspace is opened from; managing them
+                 is the last entry, so both live behind one button rather than two. -->
+            <Button x:Name="WorkspaceSwitcherButton" Classes="workspace" ToolTip.Tip="Switch workspace">
+              <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedLeft">
+                  <StackPanel Width="280" Spacing="6">
+                    <TextBlock Classes="paneHeader" Margin="4,2,4,0" Text="WORKSPACES" />
+
+                    <TextBlock Classes="flyoutHint"
+                               IsVisible="{Binding !Workspaces.HasWorkspaces}"
+                               Text="No workspaces yet. Create one to give the sidebar something to show." />
+
+                    <ItemsControl ItemsSource="{Binding Workspaces.Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:WorkspaceListItem">
+                          <!-- The command comes from the row itself, so the template needs no reach
+                               back up to the window's DataContext. -->
+                          <Button Classes="flyoutRow"
+                                  Command="{Binding ActivateCommand}"
+                                  CommandParameter="{Binding}"
+                                  Click="OnWorkspaceFlyoutActionClick">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                              <ei:Icon Grid.Column="0"
+                                       Kind="Check"
+                                       Size="12"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding IsActive}" />
+                              <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Classes="flyoutDetail" Text="{Binding Summary}" />
+                              </StackPanel>
+                              <ei:Icon Grid.Column="2"
+                                       Kind="Warning"
+                                       Size="13"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource EnigmaWarningBrush}"
+                                       IsVisible="{Binding HasMissingRoots}"
+                                       ToolTip.Tip="Some of this workspace's folders are not there right now" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Height="1" Background="{DynamicResource EnigmaBorderSubtleBrush}" />
+
+                    <Button Classes="flyoutRow"
+                            Command="{Binding Workspaces.ManageCommand}"
+                            Click="OnWorkspaceFlyoutActionClick">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ei:Icon Kind="SlidersHorizontal" Size="13" VerticalAlignment="Center" />
+                        <TextBlock Text="Manage workspaces…" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Flyout>
+              </Button.Flyout>
+
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <ei:Icon Kind="Books" Size="15" VerticalAlignment="Center" />
+                <TextBlock VerticalAlignment="Center"
+                           MaxWidth="180"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Workspaces.ActiveWorkspaceName}" />
+                <ei:Icon Kind="CaretDown" Size="10" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+
+          <!-- Trailing edge, away from the view toggles: settings is not a per-document action. -->
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <!-- Debug builds only, via ShowDiagnostics. Here rather than in the settings window
+                 because the crash dialog is hosted in THIS window: raised from behind a modal child
+                 it would be logged and flushed but never seen. -->
+            <Button Classes="toolbar"
+                    IsVisible="{Binding ShowDiagnostics}"
+                    Command="{Binding ThrowTestExceptionCommand}"
+                    ToolTip.Tip="Raise a test exception (debug builds only)">
+              <ei:Icon Kind="Bug" Size="16" />
+            </Button>
+            <Button Classes="toolbar"
+                    Command="{Binding OpenAboutCommand}"
+                    ToolTip.Tip="About">
+              <ei:Icon Kind="Info" Size="16" />
+            </Button>
+            <Button Classes="toolbar"
+                    Command="{Binding OpenSettingsCommand}"
+                    ToolTip.Tip="Settings">
+              <ei:Icon Kind="Gear" Size="16" />
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Three panes. The column order is sidebar | splitter | editor | splitter | preview; the
+           code-behind resolves the two collapsible columns through Grid.GetColumn on the panes, so
+           inserting a column here does not silently break the collapse logic. -->
+      <Grid Grid.Row="1" x:Name="PaneGrid">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="280" MinWidth="180" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" MinWidth="240" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" MinWidth="220" />
+        </Grid.ColumnDefinitions>
+
+        <Border x:Name="SidebarPane"
+                Grid.Column="0"
+                IsVisible="{Binding IsSidebarVisible}"
+                Background="{DynamicResource EnigmaSurfaceBrush}">
+          <Grid RowDefinitions="Auto,*">
+
+            <!-- Which of the two the sidebar is showing. A segmented pair rather than two independent
+                 toggles, for the same reason the view modes are one: there is no arrangement in which
+                 the pane shows neither. -->
+            <Border Grid.Row="0" Classes="segmented tabs">
+              <Grid ColumnDefinitions="*,*">
+                <ToggleButton Grid.Column="0"
+                              IsChecked="{Binding IsExplorerTab}"
+                              ToolTip.Tip="The workspace's files">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ei:Icon Kind="Folders" Size="14" VerticalAlignment="Center" />
+                    <TextBlock Text="Explorer" VerticalAlignment="Center" />
+                  </StackPanel>
+                </ToggleButton>
+                <ToggleButton Grid.Column="1"
+                              IsChecked="{Binding IsSearchTab}"
+                              ToolTip.Tip="Search every note in the workspace">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ei:Icon Kind="MagnifyingGlass" Size="14" VerticalAlignment="Center" />
+                    <TextBlock Text="Search" VerticalAlignment="Center" />
+                  </StackPanel>
+                </ToggleButton>
+              </Grid>
+            </Border>
+
+            <!-- The Explorer tab: the caption row and everything under it. -->
+            <Grid Grid.Row="1" RowDefinitions="Auto,*" IsVisible="{Binding IsExplorerTab}">
+              <!-- Caption plus the two things that act on the tree. The filter toggle lives here rather
+                   than in the window's toolbar because it changes what THIS pane shows; it writes the
+                   same setting as the settings window's checkbox, so the two can never disagree. -->
+              <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Grid.Column="0" Classes="paneHeader" Text="{Binding Workspaces.SidebarHeader}" />
+                <ToggleButton Grid.Column="1"
+                              Classes="paneAction"
+                              IsVisible="{Binding Workspaces.HasActiveWorkspace}"
+                              IsChecked="{Binding FileTree.ShowAllFiles}"
+                              ToolTip.Tip="Show every file, not markdown only. Hidden folders stay hidden either way.">
+                  <ei:Icon Kind="Eye" Size="14" />
+                </ToggleButton>
+                <Button Grid.Column="2"
+                        Classes="paneAction"
+                        IsVisible="{Binding Workspaces.HasActiveWorkspace}"
+                        Command="{Binding FileTree.RefreshCommand}"
+                        ToolTip.Tip="Read the folders again">
+                  <ei:Icon Kind="ArrowClockwise" Size="14" />
+                </Button>
+              </Grid>
+
+              <!-- First run: nothing exists yet, so the pane's job is to say how to start. -->
+              <StackPanel Grid.Row="1"
+                          Margin="16"
+                          Spacing="12"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding !Workspaces.HasActiveWorkspace}">
+                <ei:Icon Kind="FolderOpen" Size="26" HorizontalAlignment="Center"
+                         Foreground="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+                <TextBlock Classes="placeholder" Margin="0"
+                           Text="Create a workspace and add a folder to it, and its files show up here." />
+                <Button HorizontalAlignment="Center"
+                        Padding="12,5"
+                        Command="{Binding Workspaces.ManageCommand}"
+                        Content="Create a workspace…" />
+              </StackPanel>
+
+              <!-- A workspace is open: the missing-folder warning, then the tree itself. -->
+              <Grid Grid.Row="1" RowDefinitions="Auto,*" IsVisible="{Binding Workspaces.HasActiveWorkspace}">
+                <Border Grid.Row="0"
+                        Margin="8,0,8,8"
+                        Padding="8,6"
+                        CornerRadius="4"
+                        IsVisible="{Binding Workspaces.HasMissingRoots}"
+                        Background="{DynamicResource EnigmaWarningBackgroundBrush}"
+                        BorderBrush="{DynamicResource EnigmaWarningBorderBrush}"
+                        BorderThickness="1">
+                  <TextBlock FontSize="11"
+                             TextWrapping="Wrap"
+                             Text="{Binding Workspaces.MissingRootsWarning}" />
+                </Border>
+
+                <views:FileTreeView Grid.Row="1" DataContext="{Binding FileTree}" />
+              </Grid>
+            </Grid>
+
+            <!-- The Search tab. Collapsed rather than merely covered when it is not showing: the
+                 results list is a live collection, and a hidden pane should not be laying one out.
+                 The wrapper carries the flag, like the editor pane's does and for the same reason —
+                 the view's own DataContext is the search ViewModel, and which tab is up is the
+                 window's business. -->
+            <Border Grid.Row="1" IsVisible="{Binding IsSearchTab}">
+              <views:SearchPaneView DataContext="{Binding Search}" />
+            </Border>
+          </Grid>
+        </Border>
+
+        <GridSplitter x:Name="SidebarSplitter" Grid.Column="1" Classes="pane" IsVisible="{Binding IsSidebarVisible}" />
+
+        <!-- The editor pane owns its own tab strip and status, so it gets no pane caption of its
+             own: the tabs already say what is open. The wrapper carries the pane flag and the grid
+             column, like the two panes either side of it — the view itself cannot, because its own
+             DataContext is the document manager and the flag belongs to the window. -->
+        <Border x:Name="EditorPane"
+                Grid.Column="2"
+                IsVisible="{Binding IsEditorVisible}">
+          <views:EditorPaneView x:Name="Editor" DataContext="{Binding Documents}" />
+        </Border>
+
+        <!-- Only in Split: in either single-pane mode there is no boundary to drag. -->
+        <GridSplitter x:Name="PreviewSplitter" Grid.Column="3" Classes="pane" IsVisible="{Binding IsSplit}" />
+
+        <Border x:Name="PreviewPane"
+                Grid.Column="4"
+                IsVisible="{Binding IsPreviewVisible}"
+                Background="{DynamicResource EnigmaSurfaceBrush}"
+                BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
+                BorderThickness="1,0,0,0">
+          <Grid RowDefinitions="Auto,*">
+            <!-- Caption plus the one thing that acts on the pane, laid out like the explorer's own
+                 caption row. Disabled rather than hidden with nothing to copy: a button that comes
+                 and goes with the last tab is one the reader has to find again. -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Classes="paneHeader" Text="PREVIEW" />
+              <Button Grid.Column="1"
+                      Classes="paneAction"
+                      Click="OnPreviewCopyClick"
+                      IsEnabled="{Binding Preview.CanCopy}"
+                      ToolTip.Tip="Copy the selection, or the whole note">
+                <ei:Icon Kind="Copy" Size="14" />
+              </Button>
+            </Grid>
+            <!-- Nothing open: the pane says why it is blank rather than looking broken. -->
+            <TextBlock Grid.Row="1" Classes="placeholder"
+                       IsVisible="{Binding !Preview.HasDocument}"
+                       Text="Open a note and its rendered markdown shows up here." />
+            <!-- Collapsed rather than left empty when there is no document, so the renderer is never
+                 laying out an empty tree behind the placeholder above. -->
+            <preview:MarkdownPreview Grid.Row="1"
+                                     x:Name="PreviewRenderer"
+                                     IsVisible="{Binding Preview.HasDocument}"
+                                     SourcePath="{Binding Preview.SourcePath}"
+                                     Markdown="{Binding Preview.Markdown}"
+                                     BasePath="{Binding Preview.BasePath}"
+                                     Typography="{Binding Preview.Typography}">
+              <preview:MarkdownPreview.ContextMenu>
+                <!-- Both of these are methods on the renderer rather than anything bindable, so they
+                     go through the code-behind — the same way the editor pane's own Copy and Select
+                     all do, and for the same reason. The gestures are shown because this window has
+                     no menu bar: without a row apiece they would be two key combinations nobody was
+                     ever told about. -->
+                <ContextMenu x:DataType="vm:MainWindowViewModel">
+                  <MenuItem Header="Copy"
+                            InputGesture="Ctrl+C"
+                            IsEnabled="{Binding Preview.CanCopy}"
+                            Click="OnPreviewCopyClick">
+                    <MenuItem.Icon>
+                      <ei:Icon Kind="Copy" Size="14" />
+                    </MenuItem.Icon>
+                  </MenuItem>
+                  <MenuItem Header="Select all"
+                            InputGesture="Ctrl+A"
+                            IsEnabled="{Binding Preview.CanCopy}"
+                            Click="OnPreviewSelectAllClick" />
+                </ContextMenu>
+              </preview:MarkdownPreview.ContextMenu>
+            </preview:MarkdownPreview>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- Status bar: vim mode | whatever the engine has to say | active document | caret position.
+           The first two are hidden while vim emulation is off, because then there is no mode to be
+           in and nothing that speaks through them. -->
+      <Border Grid.Row="2"
+              Height="26"
+              Background="{DynamicResource EnigmaSurfaceBrush}"
+              BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
+              BorderThickness="0,1,0,0">
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+          <Border Grid.Column="0"
+                  Classes="vimMode"
+                  Classes.insert="{Binding IsVimInsertMode}"
+                  Classes.visual="{Binding IsVimVisualMode}"
+                  IsVisible="{Binding IsVimEnabled}">
+            <TextBlock Text="{Binding VimModeText}" />
+          </Border>
+          <Border Grid.Column="1"
+                  Width="1"
+                  Margin="0,5"
+                  IsVisible="{Binding IsVimEnabled}"
+                  Background="{DynamicResource EnigmaBorderSubtleBrush}" />
+          <!-- One slot, two things that can be in it: what the engine has to say, and what the user
+               is typing after ':' or '/'. They never overlap — the engine clears its message before
+               it opens a command line — so they share the cell and take it in turns. -->
+          <Panel Grid.Column="2">
+            <TextBlock Classes="status"
+                       IsVisible="{Binding !IsVimCommandLineVisible}"
+                       Text="{Binding VimStatusText}" />
+            <TextBlock Classes="status commandLine"
+                       IsVisible="{Binding IsVimCommandLineVisible}"
+                       Text="{Binding VimCommandLineText}" />
+          </Panel>
+          <TextBlock Grid.Column="3" Classes="status" Text="{Binding FileInfoText}" />
+          <TextBlock Grid.Column="4" Classes="status" Text="{Binding CaretPositionText}" />
+        </Grid>
+      </Border>
+
+    </Grid>
+
+    <!-- The size bounds live here rather than in each caller: ContentDialog does not reset them
+         between dialogs, so a per-dialog value would leak into the next one. They are wide enough for
+         the manage-workspaces view (700 × 420) and still bound a long crash message. -->
+    <contentDialog:ContentDialog x:Name="HostDialog"
+                                 DialogMinWidth="360"
+                                 DialogMaxWidth="860"
+                                 DialogMaxHeight="640" />
+    <controls:Overlay x:Name="HostOverlay" />
+    <infoBar:InfoBar x:Name="HostInfoBar" />
+  </Panel>
+</Window>

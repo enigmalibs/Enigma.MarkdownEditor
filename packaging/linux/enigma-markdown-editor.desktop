@@ -1,0 +1,24 @@
+[Desktop Entry]
+# Template. install.sh rewrites the Exec line below to the absolute path it installed the
+# application to: a desktop entry's Exec must be absolute and this format performs no $HOME
+# expansion, so the one value that depends on where the user installed cannot be baked in here.
+# (The placeholder is deliberately not named in this comment — the substitution is global, so a
+# second occurrence would be rewritten here too and leave the installed entry saying nonsense.)
+#
+# There is deliberately no %F field code and no MimeType= line: the application does not open a
+# file given on the command line (Program.Main forwards its arguments to the Avalonia lifetime and
+# nothing else reads them), so advertising either would offer the desktop a capability that is not
+# there. Both land with .md file association, which is backlog for this release.
+Type=Application
+Version=1.5
+Name=Enigma Markdown Editor
+GenericName=Markdown Editor
+Comment=Workspace markdown editor with vim emulation and live preview
+Exec=@EXEC@
+Icon=enigma-markdown-editor
+Terminal=false
+Categories=Utility;TextEditor;
+Keywords=markdown;editor;notes;vim;preview;
+# Matches the WM_CLASS Avalonia derives from the process name, so the running window docks onto
+# this launcher rather than showing up as a second, unnamed taskbar entry.
+StartupWMClass=Enigma.MarkdownEditor.Desktop

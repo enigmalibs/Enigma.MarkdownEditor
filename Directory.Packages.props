@@ -1,0 +1,73 @@
+<Project>
+
+  <!-- Central Package Management: every PackageReference version in the solution is pinned
+       here so shared dependencies (e.g. Avalonia) cannot drift between projects. Projects
+       reference packages WITHOUT a Version attribute (<PackageReference Include="Foo" />);
+       the version comes from the matching <PackageVersion> below.
+
+       Pins for packages consumed by later work items (see docs/roadmap.md) are declared here
+       up front so the whole solution moves as one unit; an unreferenced <PackageVersion> is
+       inert until a project actually references it. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Core (Enigma.MarkdownEditor.Core) — no Avalonia dependency ever.
+       System.Buffers / PolySharp are deliberately absent: Core targets net10.0 alone, so the
+       netstandard2.0-support pair would only raise NU1510 and fail the zero-warnings build. -->
+  <ItemGroup>
+    <PackageVersion Include="Markdig" Version="1.3.2" />
+    <!-- Read/write JSON settings: the AppSettings class, its validator and IConfig<AppSettings> all
+         live in Core, so the pin belongs to this group rather than to the Desktop one. -->
+    <PackageVersion Include="Enigma.Configuration" Version="1.0.0" />
+  </ItemGroup>
+
+  <!-- Desktop (Avalonia) — this is a version-coupled ecosystem: bump Avalonia, the Enigma
+       control/icon libraries and the Fluent/theme packages TOGETHER, never one package at a
+       time. Mixing versions within the set breaks the build, so the whole group is held back
+       until it moves as a unit. -->
+  <ItemGroup>
+    <PackageVersion Include="Avalonia" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.2" />
+    <!-- The xunit.v3 half of the headless harness: [AvaloniaFact] runs a test body on the headless
+         session's own UI thread. Its 12.1.2 build depends on xunit.v3.extensibility.core 3.2.2, the
+         very version the test group below pins, so the two move together as well. -->
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
+    <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
+    <PackageVersion Include="Enigma.Avalonia.Desktop" Version="1.0.0" />
+    <PackageVersion Include="Enigma.Icons.Avalonia" Version="1.0.0" />
+  </ItemGroup>
+
+  <!-- Logging. Deliberately NOT in the Avalonia group above: it is an NLog/Microsoft.Extensions.Logging
+       adapter with no Avalonia dependency at all, so it versions on its own schedule.
+       Enigma.Logging.Abstractions (ILoggerHandle / IFlushableLoggerHandle) arrives transitively and
+       needs no pin of its own — nothing references it directly. -->
+  <ItemGroup>
+    <PackageVersion Include="Enigma.Logging.NLog" Version="1.0.0" />
+  </ItemGroup>
+
+  <!-- Hosting & DI. Not part of the Avalonia coupled set: it tracks the .NET runtime band (10.0.x)
+       and is bumped with the SDK, not with Avalonia. Enigma.Avalonia.Desktop brings
+       CommunityToolkit.Mvvm but NOT Microsoft.Extensions.DependencyInjection — this package is what
+       supplies the container the app composes in App.OnFrameworkInitializationCompleted. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+  </ItemGroup>
+
+  <!-- Text editor (consumed from FEATURE-3C44 on). Versioned independently of the Avalonia set:
+       AvaloniaEdit ships its own 12.0.0 built against Avalonia 12.x. -->
+  <ItemGroup>
+    <PackageVersion Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+    <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
+  </ItemGroup>
+
+  <!-- Tests (MTP-native: xunit.v3 only; coverlet.collector for coverage). No Microsoft.NET.Test.Sdk. -->
+  <ItemGroup>
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+  </ItemGroup>
+
+</Project>

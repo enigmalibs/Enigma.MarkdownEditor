@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.SearchPaneView"
+             x:DataType="vm:SearchViewModel">
+
+  <!-- Kept here rather than in the window's styles, like the tree's own: they describe this pane and
+       nothing else, and a pane that carries its look with it can be moved without losing it. -->
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.caseToggle">
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="4,0,0,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.searchStatus">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="10,6,10,2" />
+    </Style>
+    <!-- One file's heading. Quiet enough that the hits under it are what the eye lands on. -->
+    <Style Selector="TextBlock.groupName">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.groupLocation">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.hitCount">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+    <!-- One hit. A Button rather than a list row: the keyboard already knows what to do with one, and
+         the pane has no selection worth keeping — a hit is a place to go, not a thing to hold. -->
+    <Style Selector="Button.hitRow">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="8,2" />
+      <Setter Property="MinHeight" Value="20" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.lineNumber">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="MinWidth" Value="28" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="TextAlignment" Value="Right" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.placeholder">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="16" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*">
+
+    <!-- The query, and the one decision that changes what counts as an answer. -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,8,8,0">
+      <TextBox Grid.Column="0"
+               x:Name="QueryBox"
+               Height="26"
+               Padding="6,0"
+               VerticalContentAlignment="Center"
+               FontSize="12"
+               PlaceholderText="Search this workspace"
+               Text="{Binding Query}">
+        <!-- Enter skips the debounce; Escape empties the box, which is what clears the results. -->
+        <TextBox.KeyBindings>
+          <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}" />
+          <KeyBinding Gesture="Escape" Command="{Binding ClearCommand}" />
+        </TextBox.KeyBindings>
+      </TextBox>
+
+      <ToggleButton Grid.Column="1"
+                    Classes="caseToggle"
+                    IsChecked="{Binding MatchCase}"
+                    ToolTip.Tip="Match case">
+        <ei:Icon Kind="TextAa" Size="14" />
+      </ToggleButton>
+    </Grid>
+
+    <TextBlock Grid.Row="1"
+               Classes="searchStatus"
+               IsVisible="{Binding HasStatus}"
+               Text="{Binding StatusText}" />
+
+    <!-- Nothing asked yet: the pane says what it is for rather than sitting blank. -->
+    <TextBlock Grid.Row="2"
+               Classes="placeholder"
+               IsVisible="{Binding !HasQuery}"
+               Text="Type to search every markdown file in the workspace. Matching file names come first." />
+
+    <!-- Not virtualized, deliberately: the search stops at five hundred hits, which is a list a
+         StackPanel carries without noticing. -->
+    <ScrollViewer Grid.Row="2"
+                  IsVisible="{Binding HasResults}"
+                  HorizontalScrollBarVisibility="Disabled"
+                  Padding="0,0,0,8">
+      <ItemsControl ItemsSource="{Binding Groups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:SearchResultGroup">
+            <StackPanel Margin="0,6,0,0">
+              <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0,8,2" ToolTip.Tip="{Binding ToolTip}">
+                <ei:Icon Grid.Column="0"
+                         Kind="FileMd"
+                         Size="13"
+                         Margin="0,0,6,0"
+                         VerticalAlignment="Center"
+                         Foreground="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="groupName" Text="{Binding Name}" />
+                  <TextBlock Classes="groupLocation"
+                             Text="{Binding Location}"
+                             IsVisible="{Binding HasLocation}" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Classes="hitCount" Text="{Binding HitCountText}" />
+              </Grid>
+
+              <ItemsControl ItemsSource="{Binding Hits}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SearchHitItem">
+                    <Button Classes="hitRow"
+                            Command="{Binding OpenCommand}"
+                            CommandParameter="{Binding}">
+                      <Grid ColumnDefinitions="Auto,*">
+                        <TextBlock Grid.Column="0" Classes="lineNumber" Text="{Binding LineLabel}" />
+                        <!-- Three runs on one line, and on one line on purpose: whitespace between the
+                             tags would be drawn between the words. -->
+                        <TextBlock Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"><Run Text="{Binding Prefix}" /><Run Text="{Binding Match}" FontWeight="Bold" Background="{DynamicResource EnigmaWarningBackgroundBrush}" Foreground="{DynamicResource EnigmaForegroundBrush}" /><Run Text="{Binding Suffix}" /></TextBlock>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

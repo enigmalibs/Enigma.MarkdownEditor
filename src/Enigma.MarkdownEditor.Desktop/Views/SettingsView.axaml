@@ -1,0 +1,234 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             xmlns:controls="using:Enigma.Avalonia.Desktop.Controls"
+             xmlns:editors="using:Enigma.Avalonia.Desktop.Controls.Editors"
+             xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel"
+             Width="760">
+
+  <UserControl.Styles>
+    <!-- The "arrives with FEATURE-xxxx" hint under a row's own description. -->
+    <Style Selector="TextBlock.pending">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- Read-only paths shown in the Advanced group: selectable so they can be copied out. -->
+    <Style Selector="SelectableTextBlock.path">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, monospace" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- The well the groups sit in. The dialog card the host draws is EnigmaSurfaceHigh, which is
+       lighter than the EnigmaSurface the SettingsCardExpanders are painted with, so without this
+       the cards read as sunk into their own container. Painting the ground colour under them puts
+       the depth order back the way the file tree and the editor pane already sit on the window. -->
+  <!-- No ScrollViewer of its own: the ContentDialog host wraps whatever it is given in one, bounded
+       by the host's DialogMaxHeight, so a second scroller here would only ever sit idle inside it.
+       The well therefore scrolls with the content rather than framing a fixed viewport. -->
+  <Border Background="{DynamicResource EnigmaBackgroundBrush}"
+          BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
+          BorderThickness="1"
+          CornerRadius="8"
+          Padding="16">
+
+    <StackPanel Spacing="12">
+
+      <!-- ============================ Appearance ============================ -->
+      <controls:SettingsCardExpander Header="Appearance"
+                                     Description="How the editor looks"
+                                     IconData="{ei:IconGeometry Palette}"
+                                     IsExpanded="True">
+        <StackPanel Spacing="8">
+          <controls:SettingsCard Header="Theme"
+                                 Description="System follows your desktop's light/dark setting and keeps following it."
+                                 IconData="{ei:IconGeometry Moon}">
+            <ComboBox MinWidth="140"
+                      ItemsSource="{Binding Themes}"
+                      SelectedItem="{Binding Theme}" />
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsCardExpander>
+
+      <!-- ============================== Editor ==============================
+           Live as of FEATURE-3C44 PHASE01: all three are read by the editor pane, which is told to
+           re-read them when this dialog closes. -->
+      <controls:SettingsCardExpander Header="Editor"
+                                     Description="Text, font and wrapping"
+                                     IconData="{ei:IconGeometry TextAa}"
+                                     IsExpanded="True">
+        <StackPanel Spacing="8">
+          <!-- A ComboBox rather than the free-text editor this row used to be: the value is one
+               installed family name, and typing one is a guess. Every row is drawn in the font it
+               offers, which is the only way to choose a font; the size is fixed so that picking a
+               font does not resize the list it is being picked from. -->
+          <controls:SettingsCard Header="Font family"
+                                 Description="Installed fixed-width fonts. Automatic picks the best one on this machine."
+                                 IconData="{ei:IconGeometry TextT}">
+            <ComboBox MinWidth="280"
+                      MaxDropDownHeight="360"
+                      ItemsSource="{Binding EditorFontChoices}"
+                      SelectedItem="{Binding EditorFontChoice}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:FontChoice">
+                  <TextBlock Text="{Binding Label}"
+                             FontFamily="{Binding PreviewFamily}"
+                             FontSize="14" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Font size"
+                                 Description="Between 6 and 72 points."
+                                 IconData="{ei:IconGeometry TextT}">
+            <editors:IntEditor Width="110" Unit="pt" Value="{Binding EditorFontSize}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Wrap long lines"
+                                 Description="Wrap at the pane edge instead of scrolling sideways."
+                                 IconData="{ei:IconGeometry Article}">
+            <ToggleSwitch IsChecked="{Binding WordWrap}" />
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsCardExpander>
+
+      <!-- ============================== Preview ==============================
+           Live as of FEATURE-E340 PHASE02: the preview pane rebuilds itself around these when this
+           dialog closes, through the same seam the editor re-reads its own font with. -->
+      <controls:SettingsCardExpander Header="Preview"
+                                     Description="How the rendered note is set"
+                                     IconData="{ei:IconGeometry BookOpen}"
+                                     IsExpanded="True">
+        <StackPanel Spacing="8">
+          <!-- Every installed family, not only the fixed-width ones: a note is read in whatever
+               reads well, which is the opposite of what the editor's own picker offers. -->
+          <controls:SettingsCard Header="Font family"
+                                 Description="What prose is set in. Automatic uses the font the rest of the application is drawn in."
+                                 IconData="{ei:IconGeometry TextT}">
+            <ComboBox MinWidth="280"
+                      MaxDropDownHeight="360"
+                      ItemsSource="{Binding PreviewFontChoices}"
+                      SelectedItem="{Binding PreviewFontChoice}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:FontChoice">
+                  <TextBlock Text="{Binding Label}"
+                             FontFamily="{Binding PreviewFamily}"
+                             FontSize="14" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Font size"
+                                 Description="Between 6 and 72 points. Headings scale with it."
+                                 IconData="{ei:IconGeometry TextAa}">
+            <editors:IntEditor Width="110" Unit="pt" Value="{Binding PreviewFontSize}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Code font family"
+                                 Description="What code spans and fenced blocks are set in. Installed fixed-width fonts."
+                                 IconData="{ei:IconGeometry Code}">
+            <ComboBox MinWidth="280"
+                      MaxDropDownHeight="360"
+                      ItemsSource="{Binding PreviewCodeFontChoices}"
+                      SelectedItem="{Binding PreviewCodeFontChoice}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:FontChoice">
+                  <TextBlock Text="{Binding Label}"
+                             FontFamily="{Binding PreviewFamily}"
+                             FontSize="14" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Code font size"
+                                 Description="Between 6 and 72 points. Set on its own rather than under the font size above, because a fixed-width face reads larger than prose at the same size."
+                                 IconData="{ei:IconGeometry TextAa}">
+            <editors:IntEditor Width="110" Unit="pt" Value="{Binding PreviewCodeFontSize}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Line height"
+                                 Description="How far apart the lines sit, as a multiple of the size they are set at. Between 1 and 2.5."
+                                 IconData="{ei:IconGeometry ArrowsOutLineVertical}">
+            <editors:DoubleEditor Width="110" Unit="×" Value="{Binding PreviewLineHeight}" />
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsCardExpander>
+
+      <!-- ============================= Behaviour ============================= -->
+      <controls:SettingsCardExpander Header="Behaviour"
+                                     Description="Vim, autosave; file handling arrives with its feature"
+                                     IconData="{ei:IconGeometry SlidersHorizontal}"
+                                     IsExpanded="True">
+        <StackPanel Spacing="8">
+          <!-- Live as of FEATURE-11AA PHASE01: the editor attaches or detaches the vim engine when
+               this dialog closes, so the switch reaches the file that is already open. -->
+          <controls:SettingsCard Header="Vim emulation"
+                                 Description="Modal editing: the editor starts in normal mode, and the mode is shown in the status bar."
+                                 IconData="{ei:IconGeometry Terminal}">
+            <ToggleSwitch IsChecked="{Binding VimEnabled}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Autosave"
+                                 Description="Write a modified document back after a pause in typing."
+                                 IconData="{ei:IconGeometry FloppyDisk}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <editors:IntEditor Width="110" Unit="s" Value="{Binding AutosaveDelaySeconds}" />
+              <ToggleSwitch IsChecked="{Binding AutosaveEnabled}" />
+            </StackPanel>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Show every file"
+                                 Description="List all files in the workspace tree, not just markdown and images."
+                                 IconData="{ei:IconGeometry Eye}"
+                                 IsEnabled="False">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Classes="pending" VerticalAlignment="Center" Text="FEATURE-0DE1" />
+              <ToggleSwitch IsChecked="{Binding ShowAllFiles}" />
+            </StackPanel>
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Image folder"
+                                 Description="Where a pasted or dropped image is written, relative to the document."
+                                 IconData="{ei:IconGeometry Folder}"
+                                 IsEnabled="False">
+            <editors:TextEditor Width="200" Text="{Binding ImageFolderName}" />
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsCardExpander>
+
+      <!-- ============================= Advanced ============================= -->
+      <controls:SettingsCardExpander Header="Advanced"
+                                     Description="Logging and diagnostics"
+                                     IconData="{ei:IconGeometry Wrench}"
+                                     IsExpanded="True">
+        <StackPanel Spacing="8">
+          <controls:SettingsCard Header="Verbose logging"
+                                 Description="Record Debug entries as well as Information and above. Takes effect the next time the editor starts."
+                                 IconData="{ei:IconGeometry Bug}">
+            <ToggleSwitch IsChecked="{Binding DebugLogging}" />
+          </controls:SettingsCard>
+
+          <controls:SettingsCard Header="Locations"
+                                 IconData="{ei:IconGeometry FolderOpen}">
+            <StackPanel Spacing="4" MaxWidth="420">
+              <SelectableTextBlock Classes="path" Text="{Binding SettingsFilePath}" />
+              <SelectableTextBlock Classes="path" Text="{Binding LogsFolderPath}" />
+            </StackPanel>
+          </controls:SettingsCard>
+        </StackPanel>
+      </controls:SettingsCardExpander>
+
+    </StackPanel>
+
+  </Border>
+
+</UserControl>

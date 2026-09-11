@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <!-- TFM deviation from the house library default (netstandard2.0;net8.0;net10.0): this library is
+         app-internal and never published as a NuGet package — it exists only to keep the vim engine,
+         workspace/session/search services and the markdown pipeline free of any Avalonia dependency,
+         so it is consumed exclusively by Enigma.MarkdownEditor.Desktop and its test project. Nothing
+         needs the netstandard2.0 / net8.0 surface, so it targets the app's own TFM alone. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The product version, shared with the Desktop app: this library ships only inside it,
+         so the two move together and a release bumps both. Distinct from the package versions
+         in Directory.Packages.props, which are dependency pins and unrelated to it. -->
+    <Version>1.6.0</Version>
+    <!-- GenerateDocumentationFile is deliberately absent, for the same reason as the TFM above: an
+         app-internal library ships no XML doc file, and enabling it under TreatWarningsAsErrors would
+         demand an XML comment on every public member of the whole engine (CS1591). -->
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Read/write JSON settings. Brings only Microsoft.Extensions.DependencyInjection.Abstractions,
+         so Core stays free of the hosting stack as well as of Avalonia. -->
+    <PackageReference Include="Enigma.Configuration" />
+    <!-- The markdown parser behind the preview. Brings nothing of its own, and lives in Core rather
+         than in Desktop so the pipeline and every decision taken over the AST stay testable without
+         a window. -->
+    <PackageReference Include="Markdig" />
+  </ItemGroup>
+  <!-- No NuGet packaging metadata: this project is never packed.
+       LangVersion / Nullable / ImplicitUsings / TreatWarningsAsErrors are deliberately absent:
+       they come from Directory.Build.props and must never be repeated per-project. No `Version`
+       attribute on a `PackageReference` either — dependency versions live in
+       Directory.Packages.props (CPM). The `<Version>` property above is the product version, and
+       is a different thing. -->
+</Project>

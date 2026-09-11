@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "appName": "Enigma.MarkdownEditor.Desktop",
+  "version": "1.6.0",
+  "productId": "ca4ae014-007d-426e-af0d-92da04aff950",
+  "upgradeCode": "a7b550b9-1338-458f-bf2b-66dcf1d25380",
+  "manufacturer": "Josu\u00E9 Cl\u00E9ment",
+  "scope": "PerMachine",
+  "install": {
+    "installPath": "%ProgramFiles%\\Enigma Markdown Editor",
+    "releasePath": "artifacts\\publish\\win-x64"
+  },
+  "output": {
+    "outputPath": "artifacts",
+    "msiFilename": "EnigmaMarkdownEditor"
+  },
+  "compression": "High",
+  "controlPanel": {
+    "productIcon": "src\\Enigma.MarkdownEditor.Desktop\\Assets\\app.ico"
+  },
+  "shortcuts": [
+    {
+      "shortcutPath": "%Desktop%",
+      "shortcutName": "Enigma Markdown Editor",
+      "targetPath": "[INSTALLDIR]\\Enigma.MarkdownEditor.Desktop.exe",
+      "iconPath": "src\\Enigma.MarkdownEditor.Desktop\\Assets\\app.ico"
+    },
+    {
+      "shortcutPath": "%ProgramMenu%",
+      "shortcutName": "Enigma Markdown Editor",
+      "targetPath": "[INSTALLDIR]\\Enigma.MarkdownEditor.Desktop.exe",
+      "iconPath": "src\\Enigma.MarkdownEditor.Desktop\\Assets\\app.ico"
+    }
+  ]
+}

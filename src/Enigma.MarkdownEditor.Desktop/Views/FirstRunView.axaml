@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             xmlns:controls="using:Enigma.Avalonia.Desktop.Controls"
+             xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.FirstRunView"
+             x:DataType="vm:FirstRunViewModel"
+             Width="520">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.intro">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+    </Style>
+    <!-- The chosen folder, or the empty state. Set in the editor's own fixed-width font for the same
+         reason the settings window sets its paths in it: a path is read character by character. -->
+    <Style Selector="TextBlock.folder">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, DejaVu Sans Mono, monospace" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxWidth" Value="260" />
+    </Style>
+    <Style Selector="TextBlock.error">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaErrorBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Spacing="12">
+
+    <TextBlock x:Name="Intro"
+               Classes="intro"
+               Text="Three things worth deciding before you start. Everything else — fonts, autosave, the preview — is in Settings, and so are these." />
+
+    <!-- The settings window's own rows, deliberately: the first screen of the application should look
+         like the rest of it, and these three settings are edited in exactly these controls there. -->
+    <controls:SettingsCard x:Name="VimRow"
+                           Header="Vim emulation"
+                           Description="Modal editing: the editor starts in normal mode, and the mode is shown in the status bar."
+                           IconData="{ei:IconGeometry Keyboard}">
+      <ToggleSwitch x:Name="VimSwitch" IsChecked="{Binding VimEnabled}" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard x:Name="ThemeRow"
+                           Header="Theme"
+                           Description="System follows your desktop's light/dark setting and keeps following it."
+                           IconData="{ei:IconGeometry Moon}">
+      <ComboBox x:Name="ThemePicker"
+                MinWidth="140"
+                ItemsSource="{Binding Themes}"
+                SelectedItem="{Binding Theme}" />
+    </controls:SettingsCard>
+
+    <controls:SettingsCard x:Name="FolderRow"
+                           Header="Notes folder"
+                           Description="The folder your notes live in. It becomes your first workspace; you can add more later."
+                           IconData="{ei:IconGeometry FolderOpen}">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock x:Name="FolderPath"
+                   Classes="folder"
+                   VerticalAlignment="Center"
+                   Text="{Binding FolderText}" />
+        <Button x:Name="ChooseFolder"
+                Content="Choose folder…"
+                Command="{Binding ChooseFolderCommand}" />
+      </StackPanel>
+    </controls:SettingsCard>
+
+    <!-- Absent, not blank, when there is nothing wrong. The picker is raised from inside this dialog,
+         so its failure has nowhere else to be shown. -->
+    <TextBlock x:Name="Error"
+               Classes="error"
+               IsVisible="{Binding HasError}"
+               Text="{Binding ErrorMessage}" />
+
+  </StackPanel>
+</UserControl>

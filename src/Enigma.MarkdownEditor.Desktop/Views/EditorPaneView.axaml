@@ -1,0 +1,275 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             xmlns:edit="using:AvaloniaEdit"
+             xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.EditorPaneView"
+             x:DataType="vm:DocumentManagerViewModel">
+
+  <UserControl.Styles>
+    <!-- One tab. A ListBoxItem rather than a Button so the strip keeps selection, keyboard
+         navigation and the theme's own hover and focus states. -->
+    <Style Selector="ListBox#Tabs ListBoxItem">
+      <Setter Property="Padding" Value="10,0,6,0" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="ListBox#Tabs ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource EnigmaBackgroundBrush}" />
+    </Style>
+    <!-- The folder colour bar. Same 4px as the tree's, so the two read as one mark; 8px of clearance
+         after it, because unlike a tree row there is no icon between it and the text. -->
+    <Style Selector="Border.tabColour">
+      <Setter Property="Width" Value="4" />
+      <Setter Property="Margin" Value="0,6,8,6" />
+      <Setter Property="CornerRadius" Value="2" />
+    </Style>
+    <Style Selector="TextBlock.tabTitle">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="MaxWidth" Value="180" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <!-- Quiet by default, so that raising the selected one below is what tells the eye which of
+           the open files is the one being edited. -->
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+    </Style>
+    <!-- Foreground and nothing else. An accent bar would compete with the 1px border already drawn
+         under the strip, and a bold title would make the selected tab wider than it was a moment
+         ago and slide the whole strip out from under the pointer. -->
+    <Style Selector="ListBox#Tabs ListBoxItem:selected TextBlock.tabTitle">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundBrush}" />
+    </Style>
+    <!-- The dirty dot and the close button live in one slot of a fixed size, so a tab is the same
+         width whichever of the two is in it — the moment it is edited, and the moment the pointer
+         arrives. -->
+    <Style Selector="Panel.tabSlot">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Ellipse.dot">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="Height" Value="8" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Fill" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.tabClose">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <!-- Which of the two is showing is decided here rather than by an IsVisible binding inside the
+         template, and it has to be: a value set locally on a control outranks every style setter,
+         so a bound IsVisible is a value no :pointerover rule could ever override. The template
+         binds the document's state to a class instead and these two rules read it — the close
+         button showing is the resting state, and a modified tab the pointer is not over is the one
+         case that departs from it. -->
+    <Style Selector="ListBox#Tabs ListBoxItem:not(:pointerover) StackPanel.dirty Ellipse.dot">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="ListBox#Tabs ListBoxItem:not(:pointerover) StackPanel.dirty Button.tabClose">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <!-- The strip's own scrollbar, pinned to the 6px band the Border reserves under the tabs. Both
+         the bar and its thumb are given the height outright rather than left to the theme: Fluent
+         sizes them from ScrollBarSize and grows them again on :pointerover, and a bar that thickens
+         under the pointer would push the tabs up as the mouse arrives. Height as well as MinHeight,
+         because the theme sets both. -->
+    <Style Selector="ListBox#Tabs ScrollBar:horizontal">
+      <Setter Property="MinHeight" Value="6" />
+      <Setter Property="Height" Value="6" />
+    </Style>
+    <Style Selector="ListBox#Tabs ScrollBar:horizontal /template/ Thumb">
+      <Setter Property="MinHeight" Value="6" />
+      <Setter Property="Height" Value="6" />
+    </Style>
+    <!-- The two arrow buttons at the ends. They are 16px squares built around a PathIcon, so at 6px
+         they are a squashed glyph and a third of the track; the thumb and the wheel are what this
+         strip is scrolled with. Only the line buttons — PART_PageUpButton and PART_PageDownButton
+         are the invisible click-to-page halves of the track and stay. -->
+    <Style Selector="ListBox#Tabs ScrollBar:horizontal /template/ RepeatButton#PART_LineUpButton">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="ListBox#Tabs ScrollBar:horizontal /template/ RepeatButton#PART_LineDownButton">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="TextBlock.placeholder">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="16" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource EnigmaBackgroundBrush}">
+
+    <!-- The tab strip. Horizontal scrolling rather than wrapping: a second row of tabs would move
+         the editor down every time one more file is opened. AllowAutoHide=False is what makes the
+         scrollbar usable here: with it the Fluent template gives the bar a row of its own under the
+         content instead of floating it across the bottom of the very tabs it is there to reach, and
+         stops it thinning to a hairline between visits. MinHeight is the 30px of a tab plus the 6px
+         the bar takes plus the 1px bottom border, so the band is reserved whether or not a bar is in
+         it and the editor does not move as tabs are opened and closed. The ListBox is pinned to the
+         top for the same reason: left to stretch it would make the tabs themselves 6px taller
+         whenever the bar is away. -->
+    <Border Grid.Row="0"
+            IsVisible="{Binding HasDocuments}"
+            MinHeight="37"
+            Background="{DynamicResource EnigmaSurfaceBrush}"
+            BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
+            BorderThickness="0,0,0,1">
+      <ListBox x:Name="Tabs"
+               ItemsSource="{Binding Documents}"
+               SelectedItem="{Binding ActiveDocument}"
+               Background="Transparent"
+               BorderThickness="0"
+               Padding="0"
+               VerticalAlignment="Top"
+               PointerReleased="OnTabsPointerReleased"
+               PointerWheelChanged="OnTabsPointerWheelChanged"
+               ScrollViewer.AllowAutoHide="False"
+               ScrollViewer.HorizontalScrollBarVisibility="Auto"
+               ScrollViewer.VerticalScrollBarVisibility="Disabled">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:DocumentViewModel">
+            <StackPanel Orientation="Horizontal"
+                        Classes.dirty="{Binding HasUnsavedChanges}"
+                        ToolTip.Tip="{Binding ToolTip}">
+              <!-- The folder this note came from, as a bar at the tab's leading edge. Its width is
+                   unconditional and its background is the binding: a Border with no background
+                   paints nothing, so an uncoloured tab is exactly as wide as a coloured one and the
+                   strip does not shift sideways as colours are set. -->
+              <Border Classes="tabColour" Background="{Binding ColorBrush}" />
+
+              <TextBlock Classes="tabTitle" Text="{Binding TabTitle}" />
+
+              <!-- Exactly one of the two is shown: the dot while there is something to save, the
+                   close button the rest of the time and whenever the pointer is over the tab. The
+                   class above is all the template says about it — the styles make the choice. -->
+              <Panel Classes="tabSlot">
+                <Ellipse Classes="dot" />
+
+                <Button Classes="tabClose"
+                        Command="{Binding #Tabs.((vm:DocumentManagerViewModel)DataContext).CloseCommand}"
+                        CommandParameter="{Binding}"
+                        ToolTip.Tip="Close">
+                  <ei:Icon Kind="X" Size="10" />
+                </Button>
+              </Panel>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <!-- The file changed underneath a buffer that has its own unsaved changes. Not the shell's info
+         bar: that one carries no buttons, and this question belongs to one tab rather than to the
+         window — switching tabs has to leave it behind. -->
+    <Border Grid.Row="1"
+            Padding="10,6"
+            IsVisible="{Binding ActiveDocument.HasExternalChange, FallbackValue=False}"
+            Background="{DynamicResource EnigmaWarningBackgroundBrush}"
+            BorderBrush="{DynamicResource EnigmaWarningBorderBrush}"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+        <ei:Icon Grid.Column="0"
+                 Kind="Warning"
+                 Size="14"
+                 Margin="0,0,8,0"
+                 VerticalAlignment="Center"
+                 Foreground="{DynamicResource EnigmaWarningBrush}" />
+        <TextBlock Grid.Column="1"
+                   VerticalAlignment="Center"
+                   TextWrapping="Wrap"
+                   FontSize="12"
+                   Text="This file was changed by something else while you had unsaved changes here." />
+        <Button Grid.Column="2"
+                Margin="8,0,0,0"
+                Padding="10,3"
+                Command="{Binding ReloadCommand}"
+                CommandParameter="{Binding ActiveDocument}"
+                Content="Reload"
+                ToolTip.Tip="Throw away the changes in this tab and read the file again" />
+        <Button Grid.Column="3"
+                Margin="6,0,0,0"
+                Padding="10,3"
+                Command="{Binding KeepMineCommand}"
+                CommandParameter="{Binding ActiveDocument}"
+                Content="Keep mine"
+                ToolTip.Tip="Keep what is in this tab; saving will overwrite the file" />
+      </Grid>
+    </Border>
+
+    <!-- Keyed on the active document rather than on the open ones, so the pane is never drawn as an
+         editor with nothing in it. The strip above keeps HasDocuments: tabs with no selection are
+         still tabs. -->
+    <TextBlock Grid.Row="2"
+               Classes="placeholder"
+               IsVisible="{Binding !HasActiveDocument}"
+               Text="Double-click a markdown file in the tree to open it here." />
+
+    <!-- One editor for every tab, not one per tab. Switching documents swaps the bound TextDocument
+         and restores the caret and scroll offsets the outgoing tab was left at, which costs two
+         numbers per tab instead of a whole text view.
+
+         No brushes here beyond the transparent background: the foreground, the line numbers, the
+         caret, the selection and the current line are all assigned by EditorAppearance, which sets
+         them alongside the TextMate token colours so one class decides how the editor looks and one
+         call repaints it when the theme variant changes.
+
+         Its visibility follows HasActiveDocument and not HasDocuments: a broken Document binding
+         path leaves the control with no document at all, and a text area with no document throws the
+         moment the pointer reaches it. Hidden, there is nothing there to reach. -->
+    <edit:TextEditor x:Name="Editor"
+                     Grid.Row="2"
+                     IsVisible="{Binding HasActiveDocument}"
+                     Document="{Binding ActiveDocument.Document}"
+                     ShowLineNumbers="True"
+                     WordWrap="{Binding WordWrap}"
+                     FontFamily="{Binding FontFamily}"
+                     FontSize="{Binding FontSize}"
+                     Background="Transparent"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto">
+      <edit:TextEditor.ContextMenu>
+        <!-- The four editing commands are methods on the control rather than anything bindable, so
+             they go through the code-behind. The three save commands are here because this window
+             has no menu bar: without them Save As would have no way in at all, and Save and Save All
+             would be two shortcuts nobody was ever told about. -->
+        <ContextMenu>
+          <MenuItem Header="Save" Command="{Binding SaveCommand}" InputGesture="Ctrl+S" />
+          <MenuItem Header="Save as…" Command="{Binding SaveAsCommand}" />
+          <MenuItem Header="Save all" Command="{Binding SaveAllCommand}" InputGesture="Ctrl+Shift+S" />
+          <Separator />
+          <MenuItem Header="Cut" Click="OnCutClick" InputGesture="Ctrl+X" />
+          <MenuItem Header="Copy" Click="OnCopyClick" InputGesture="Ctrl+C" />
+          <MenuItem Header="Paste" Click="OnPasteClick" InputGesture="Ctrl+V" />
+          <Separator />
+          <!-- The three formatting shortcuts. Here for the same reason the save commands are: this
+               window has no menu bar, so without a row apiece they would be three key combinations
+               nobody was ever told about. -->
+          <MenuItem Header="Bold" Click="OnBoldClick" InputGesture="Ctrl+B" />
+          <MenuItem Header="Italic" Click="OnItalicClick" InputGesture="Ctrl+I" />
+          <MenuItem Header="Link" Click="OnLinkClick" InputGesture="Ctrl+K" />
+          <Separator />
+          <MenuItem Header="Select all" Click="OnSelectAllClick" InputGesture="Ctrl+A" />
+        </ContextMenu>
+      </edit:TextEditor.ContextMenu>
+    </edit:TextEditor>
+  </Grid>
+</UserControl>

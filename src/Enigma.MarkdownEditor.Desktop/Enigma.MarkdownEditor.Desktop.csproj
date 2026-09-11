@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The product version. It is what build/Common.ps1 reads to name the artifacts, and what
+         msiProfiles/Enigma.MarkdownEditor.Desktop.<version>.msipkg.json mirrors — bump this, the
+         Core csproj and the profile together, per docs/RELEASE.md. -->
+    <Version>1.6.0</Version>
+    <!-- Required by Avalonia's Windows backend (drag & drop, native dialogs). -->
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <!-- Compiled bindings are the default in Avalonia 12; making it explicit documents that every
+         view root and DataTemplate must carry x:DataType, or the XAML compiler fails (AVLN2100). -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Windows-only: stamps the icon into the .exe so Explorer/taskbar show it when the app is not
+         running. The running window's icon is set separately in MainWindow.axaml (all platforms). -->
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <!-- LangVersion / Nullable / ImplicitUsings / TreatWarningsAsErrors are deliberately absent:
+       they come from Directory.Build.props and must never be repeated per-project. No `Version`
+       attribute on a `PackageReference` either — dependency versions live in
+       Directory.Packages.props (CPM). The `<Version>` property above is the product version, and
+       is a different thing. -->
+  <ItemGroup>
+    <!-- Version-coupled Avalonia set (12.1.2): bump all four together, never one alone. -->
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <!-- Avalonia.Diagnostics was removed in 12; this is its replacement, and it is Debug-only:
+         outside Debug the assets are dropped so no dev-tools code ships in a Release build. -->
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Enigma.Avalonia.Desktop" />
+    <PackageReference Include="Enigma.Icons.Avalonia" />
+    <!-- Read-only single-document view of whatever the tree opens. FEATURE-3C44 PHASE01 turns this
+         into the real tabbed editor; the package is pulled forward to here so the pane shows the file
+         with line numbers instead of a bare TextBox. -->
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
+    <!-- Syntax highlighting. Brings TextMateSharp and TextMateSharp.Grammars transitively, which is
+         where the markdown grammar, the grammars its fenced code blocks embed, and the themes all
+         come from; neither needs a pin of its own because nothing references them directly. -->
+    <PackageReference Include="AvaloniaEdit.TextMate" />
+    <!-- Supplies Microsoft.Extensions.DependencyInjection, which Enigma.Avalonia.Desktop does not
+         bring transitively. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <!-- NLog-backed ILogger<T> plus the flushable handle the crash handlers need before the process
+         goes down. Enigma.Logging.Abstractions comes with it. -->
+    <PackageReference Include="Enigma.Logging.NLog" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Enigma.MarkdownEditor.Core/Enigma.MarkdownEditor.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+</Project>

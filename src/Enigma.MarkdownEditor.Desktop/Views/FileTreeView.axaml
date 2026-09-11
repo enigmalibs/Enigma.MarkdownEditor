@@ -1,0 +1,183 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Enigma.MarkdownEditor.Desktop.ViewModels"
+             xmlns:ctl="using:Enigma.MarkdownEditor.Desktop.Controls"
+             xmlns:ws="using:Enigma.MarkdownEditor.Core.Workspaces"
+             xmlns:ei="https://github.com/josueclement/Enigma.Icons"
+             x:Class="Enigma.MarkdownEditor.Desktop.Views.FileTreeView"
+             x:DataType="vm:FileTreeViewModel">
+
+  <TreeView x:Name="Tree"
+            ItemsSource="{Binding Roots}"
+            SelectedItem="{Binding SelectedNode}"
+            KeyDown="OnKeyDown"
+            DragDrop.AllowDrop="True"
+            Padding="4,0,4,8">
+
+    <!-- One menu on the tree rather than one per row: it reads the selection, and the row's own
+         ContextRequested handler is what makes sure the right-clicked row IS the selection. -->
+    <TreeView.ContextMenu>
+      <ContextMenu x:DataType="vm:FileTreeViewModel">
+        <MenuItem Header="New file…" Command="{Binding NewFileCommand}">
+          <MenuItem.Icon>
+            <ei:Icon Kind="FilePlus" Size="14" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="New folder…" Command="{Binding NewFolderCommand}">
+          <MenuItem.Icon>
+            <ei:Icon Kind="FolderPlus" Size="14" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <Separator />
+        <!-- Nine items written out rather than templated from a collection: a MenuItem fed an
+             ItemsSource needs its generated containers styled to carry the command, and a binding
+             reaching for the tree ({$parent[TreeView]}) does not resolve from inside a ContextMenu's
+             popup, which is not part of the tree's visual chain. The swatches and the parameters are
+             {x:Static}, so both come from the one place each is defined. -->
+        <MenuItem Header="Colour" IsEnabled="{Binding CanColorSelection}">
+          <MenuItem.Icon>
+            <ei:Icon Kind="Palette" Size="14" />
+          </MenuItem.Icon>
+          <MenuItem Header="None"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.None}" />
+          <Separator />
+          <MenuItem Header="Red"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Red}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Red}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Orange"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Orange}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Orange}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Yellow"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Yellow}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Yellow}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Green"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Green}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Green}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Teal"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Teal}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Teal}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Blue"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Blue}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Blue}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Purple"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Purple}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Purple}" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Pink"
+                    Command="{Binding SetColorCommand}"
+                    CommandParameter="{x:Static ws:FolderColor.Pink}">
+            <MenuItem.Icon>
+              <Border Classes="swatch" Background="{x:Static ctl:FolderColorPalette.Pink}" />
+            </MenuItem.Icon>
+          </MenuItem>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="Rename…" InputGesture="F2" Command="{Binding RenameCommand}">
+          <MenuItem.Icon>
+            <ei:Icon Kind="PencilSimple" Size="14" />
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="Delete" InputGesture="Delete" Command="{Binding DeleteCommand}">
+          <MenuItem.Icon>
+            <ei:Icon Kind="Trash" Size="14" />
+          </MenuItem.Icon>
+        </MenuItem>
+      </ContextMenu>
+    </TreeView.ContextMenu>
+
+    <TreeView.Styles>
+      <!-- Two-way, and the reason the tree can expand lazily at all: the node's IsExpanded setter is
+           what asks for the folder's contents, and the container is what the user actually clicks. -->
+      <Style Selector="TreeViewItem" x:DataType="vm:FileTreeNodeViewModel">
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+      </Style>
+      <!-- "Reading…", "Nothing here", "No access": rows about a folder rather than in it. -->
+      <Style Selector="TextBlock.informational">
+        <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+        <Setter Property="FontStyle" Value="Italic" />
+      </Style>
+      <Style Selector="ei|Icon.informational">
+        <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
+      </Style>
+      <Style Selector="TextBlock.missing">
+        <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
+      </Style>
+      <Style Selector="ei|Icon.missing">
+        <Setter Property="Foreground" Value="{DynamicResource EnigmaWarningBrush}" />
+      </Style>
+      <!-- The folder colour, as a bar at the head of the row. Its width is unconditional and its
+           background is the binding: a Border with no background paints nothing, so a coloured row
+           and an uncoloured one are the same shape and the names below each other still line up.
+           Tinting the icon or the label instead would need a brush that is never null — a Foreground
+           bound to null draws no glyph at all. -->
+      <Style Selector="Border.folderColour">
+        <Setter Property="Width" Value="4" />
+        <Setter Property="Margin" Value="0,3,6,3" />
+        <Setter Property="CornerRadius" Value="2" />
+      </Style>
+      <!-- The same colour at menu size, in a MenuItem's icon slot. -->
+      <Style Selector="Border.swatch">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="CornerRadius" Value="2" />
+      </Style>
+    </TreeView.Styles>
+
+    <TreeView.ItemTemplate>
+      <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FileTreeNodeViewModel">
+        <!-- Background="Transparent" so the whole row answers the double-click, not just the glyphs. -->
+        <Grid ColumnDefinitions="Auto,Auto,*"
+              Background="Transparent"
+              MinHeight="22"
+              DoubleTapped="OnNodeDoubleTapped"
+              ContextRequested="OnNodeContextRequested"
+              ToolTip.Tip="{Binding Tooltip}">
+          <Border Grid.Column="0"
+                  Classes="folderColour"
+                  Background="{Binding ColorBrush}" />
+          <ei:Icon Grid.Column="1"
+                   Kind="{Binding IconKind}"
+                   Size="14"
+                   Margin="0,0,6,0"
+                   VerticalAlignment="Center"
+                   Classes.informational="{Binding IsInformational}"
+                   Classes.missing="{Binding IsMissing}" />
+          <TextBlock Grid.Column="2"
+                     Text="{Binding Name}"
+                     VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis"
+                     Classes.informational="{Binding IsInformational}"
+                     Classes.missing="{Binding IsMissing}" />
+        </Grid>
+      </TreeDataTemplate>
+    </TreeView.ItemTemplate>
+  </TreeView>
+</UserControl>
