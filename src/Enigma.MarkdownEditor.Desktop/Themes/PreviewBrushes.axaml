@@ -1,0 +1,32 @@
+<!-- Colours the preview renderer needs and the Enigma palette does not define.
+
+     Everything the renderer paints is an Enigma* key, with one exception: the chip behind a code
+     span. The shipped palette is a ramp of surfaces meant to sit BEHIND content - a pane, a dialog,
+     a card - and a code span is the one thing in the preview that has to stand out INSIDE a
+     paragraph. Borrowing a ramp step for it is what made the chip invisible in the first place: the
+     preview pane is EnigmaSurface, so the chip was EnigmaSurfaceHigh, one step away from its own
+     background.
+
+     Translucent rather than opaque, deliberately. The same chip lands on the pane (EnigmaSurface),
+     inside a block quote (EnigmaSurfaceLow) and inside a table header (EnigmaSurfaceHigh); one
+     alpha over the foreground colour reads correctly on all three, where an opaque colour would
+     need a variant per surface it can land on.
+
+     Defined per theme variant like the palette itself, so the chip follows a variant switch through
+     the same DynamicResource every other brush in the preview is bound with. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <!-- White at 20%: over the dark surfaces above it lands a clear step lighter than any of
+           them, which is what "this is code" has to say at the size of a word inside a sentence. -->
+      <SolidColorBrush x:Key="MarkdownPreviewCodeSpanBackgroundBrush" Color="#33FFFFFF" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <!-- Black at 12%, not white: on a light pane the only way for a chip to be MORE visible is
+           to be darker than what it sits on. The alpha is lower than the dark variant's because
+           dark-on-light separates at a lower contrast than light-on-dark does. -->
+      <SolidColorBrush x:Key="MarkdownPreviewCodeSpanBackgroundBrush" Color="#1F000000" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

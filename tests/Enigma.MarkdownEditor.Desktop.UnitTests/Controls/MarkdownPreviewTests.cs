@@ -93,7 +93,7 @@ public sealed class MarkdownPreviewTests
         Assert.Contains(spans, span => span.FontStyle == FontStyle.Italic);
         Assert.Contains(spans, span => TextDecorations.Strikethrough.Equals(span.TextDecorations));
 
-        Run code = Assert.Single(PreviewTree.Inlines<Run>(paragraph), run => run.Text == "code");
+        Run code = Assert.Single(PreviewTree.CodeSpans(paragraph));
 
         Assert.Equal(Monospace, code.FontFamily);
     }
