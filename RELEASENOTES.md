@@ -1,3 +1,84 @@
+# Enigma Markdown Editor v1.7.0 Release Notes
+
+A minor release, and most of it happens before the application starts: installing it on Linux. The
+installer is now the one Enigma.GitClient uses. It builds the editor straight from a checkout when
+there is no release tarball to hand, puts an `enigma-markdown-editor` command on your `PATH`, gives
+the launcher a full set of icons, and comes with an uninstaller. Inside the editor, code spans in
+the preview finally read as code. Nothing in your settings, workspaces or sessions changed shape,
+and none of them needs a migration.
+
+## New Features
+
+- **Install on Linux from a checkout, in one command.** `./packaging/linux/install.sh` builds the
+  application from the repository, with the .NET runtime bundled so it runs whatever is installed on
+  the machine, and installs it for you: no root, no `sudo`, nothing outside your home directory. The
+  same `install.sh` sits in the release tarball, and there it installs the application that came
+  with it, with no .NET SDK needed. Run it again and it upgrades in place, swapping the new copy in
+  only once the build has succeeded, so a failed build leaves the installed version working.
+  `--framework-dependent` builds a much smaller copy against an installed .NET 10 runtime, `--rid`
+  picks another runtime identifier, and `--from DIR` installs a directory you published yourself.
+- **An `enigma-markdown-editor` command.** The installer links it into `~/.local/bin`, and says so
+  if that directory is not on your `PATH`.
+- **A crisp icon at every size.** The installer now puts the launcher's icon down in all six
+  standard sizes, 16 to 256 pixels, rather than one 256-pixel image the desktop had to shrink for
+  menus and task switchers.
+- **`uninstall.sh`**, beside `install.sh` in the tarball and in the repository, removes exactly what
+  the installer wrote: the application, the command, the desktop entry and the icons. It never
+  touches `~/.config/Enigma.MarkdownEditor`, where your settings, workspaces, session and logs live,
+  or any note.
+
+## Changes
+
+- **The Linux install has moved.** The application now lives in
+  `~/.local/share/enigma-markdown-editor` (following `XDG_DATA_HOME`) rather than
+  `~/.local/opt/enigma-markdown-editor`. **You do not need to do anything about it**: installing
+  1.7.0 over a 1.x install removes the old copy once the new one is in place, and the desktop entry,
+  which kept its name, now points at the new one.
+- **`install.sh --prefix` is gone.** Set `XDG_DATA_HOME` (and `XDG_BIN_HOME` for the command) to
+  install somewhere else. That way the uninstaller can always find what the installer wrote.
+- **The release tarball's layout changed** to match: `install.sh`, `uninstall.sh`, the desktop-entry
+  template, an `icons/` folder and the application in `app/`. It is unpacked and installed exactly
+  as before.
+
+## Fixes
+
+- **Code spans in the preview read as code.** A `` `backtick` `` span was drawn one shade off
+  the pane behind it, with its text touching the edges of its own background, so in running prose it
+  looked like prose. It now sits on a chip of its own colour: lighter than the pane in the dark
+  theme, darker in the light one, and translucent, so it reads the same inside a block quote or a
+  table header. A little space either side of the text is part of the chip, and a line never breaks
+  between a chip and its padding. **Copying is unaffected**: the padding is the renderer's, not your
+  note's, and a copy out of the preview hands back exactly the characters the note contains.
+
+## Dependencies
+
+- **`Markdig` moves from 1.3.2 to 1.4.0**, a minor bump of the parser behind the preview. The
+  preview's test suite passes unchanged against it.
+- **`Microsoft.Extensions.Hosting` moves from 10.0.11 to 10.0.12**, a patch bump in the .NET 10
+  band.
+- **`coverlet.collector` moves from 10.0.1 to 10.1.0.** Test-only and not redistributed.
+- **Deliberately held back:** the version-coupled Avalonia set (`Avalonia`, `.Desktop`,
+  `.Themes.Fluent`, `.Fonts.Inter` and the two headless test packages) stays at 12.1.2 although
+  12.1.3 is out, and `Enigma.Avalonia.Desktop` stays at 1.0.0 with it (1.1.0 is out). A coupled set
+  moves as a set, on its own. `xunit.v3` stays at 3.2.2 (4.0.1 is out): a major test-framework bump
+  is its own piece of work, and the Avalonia headless test harness at 12.1.2 is built against 3.2.2.
+
+## Compatibility
+
+- **Unchanged from 1.6.0 where it matters.** Still **.NET 10** and **Avalonia 12.1.2**, still
+  **Windows x64** and **Linux x64**, both shipped **self-contained**. The Windows MSI is unchanged
+  apart from its version.
+- **Your data is read as it was left.** `settings.json`, `workspaces.json` and a stored session gain
+  nothing and lose nothing, so there is nothing to migrate, in either direction between 1.6.0 and
+  1.7.0.
+- **A Linux install from a checkout needs the .NET 10 SDK**; the release tarball does not.
+
+## Version
+
+- **1.7.0**: a SemVer MINOR release. Functionality was added (the installer), two display defects
+  were fixed, and nothing you depend on changed incompatibly. The one option removed, `--prefix`,
+  belonged to the packaging script rather than to the application, and has a replacement.
+
 # Enigma Markdown Editor v1.6.0 Release Notes
 
 A minor release about the two things you do before you write anything: making a note, and finding it
