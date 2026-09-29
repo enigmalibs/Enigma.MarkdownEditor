@@ -627,7 +627,21 @@ public class MarkdownPreview : UserControl
             if ((block.SelectionStart != block.SelectionEnd)
                 && (block.SelectedText is { Length: > 0 } selected))
             {
-                return MarkdownCopyRequest.ForSelection(selected);
+                // A code chip's first and last character are padding this renderer put there, not
+                // something the note said, and this is an editor whose readers paste commands into
+                // shells (see MarkdownCodePads). Stripped by index off the block's own record, so an
+                // authored &nbsp; in the same sentence survives the copy untouched.
+                string text = MarkdownCodePads.Strip(
+                    block,
+                    Math.Min(block.SelectionStart, block.SelectionEnd),
+                    selected);
+
+                // A selection of nothing but padding is a selection of nothing, and what a copy with
+                // nothing selected means here is the note.
+                if (text.Length > 0)
+                {
+                    return MarkdownCopyRequest.ForSelection(text);
+                }
             }
         }
 

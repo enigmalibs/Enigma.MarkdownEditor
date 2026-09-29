@@ -80,6 +80,11 @@
 | - PHASE03    | Tab colours                        | DONE        | (in FEATURE-A225.md)      |
 | FEATURE-3505 | Vim o/O continues list items       | DONE        | docs/plan/FEATURE-3505.md |
 | FEATURE-8381 | Release 1.6.0                      | DONE        | docs/plan/FEATURE-8381.md |
+| BUG-18AD     | Preview code spans barely visible  | DONE        | docs/plan/BUG-18AD.md     |
+| - PHASE01    | Code-span chip gets its own colour | DONE        | (in BUG-18AD.md)          |
+| - PHASE02    | Code-span chip padding             | DONE        | (in BUG-18AD.md)          |
+| FEATURE-4BB7 | Linux installer & uninstaller      | DONE        | docs/plan/FEATURE-4BB7.md |
+| FEATURE-3D59 | Release 1.7.0                      | DONE        | docs/plan/FEATURE-3D59.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,

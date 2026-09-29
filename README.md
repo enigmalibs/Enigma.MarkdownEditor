@@ -7,10 +7,10 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.6.0** — a new note arrives with its own `#` title already in it; a folder can be
-> given a colour and every tab opened from inside it carries that colour, so a strip of tabs says
-> which folder each note came from; and vim's `o` and `O` carry a list marker onto the line they
-> open, as `Enter` already did. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.7.0** — Linux gets the installer Enigma.GitClient uses: `install.sh` builds the
+> editor straight from a checkout or installs the one in the release tarball, adds an
+> `enigma-markdown-editor` command and a full set of icons, and ships with an `uninstall.sh`. In the
+> preview, code spans now sit on a chip of their own. See [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 
@@ -396,22 +396,38 @@ menu shortcut. Uninstall through *Apps & features* as usual.
 
 ### Linux
 
+From the release tarball:
+
 ```bash
 tar xzf EnigmaMarkdownEditor-<version>-linux-x64.tar.gz
 cd EnigmaMarkdownEditor-<version>-linux-x64
 ./install.sh
 ```
 
-Everything lands under `$HOME` — no root, no package manager:
+Or straight from a checkout of this repository, which builds the application first (it needs the
+.NET 10 SDK):
 
-| | |
+```bash
+./packaging/linux/install.sh
+```
+
+Either way everything lands under `$HOME` — no root, no `sudo`, no package manager — and **Enigma
+Markdown Editor** is in your application launcher:
+
+| What | Where (`XDG_DATA_HOME` and `XDG_BIN_HOME` are honoured) |
 |---|---|
-| `~/.local/opt/enigma-markdown-editor` | the application |
-| `~/.local/share/applications` | the desktop entry |
-| `~/.local/share/icons/hicolor/256x256/apps` | the icon |
+| the application | `~/.local/share/enigma-markdown-editor` |
+| an `enigma-markdown-editor` command | `~/.local/bin/enigma-markdown-editor`, a symlink to it |
+| the desktop entry | `~/.local/share/applications/enigma-markdown-editor.desktop` |
+| the icon, six sizes | `~/.local/share/icons/hicolor/<N>x<N>/apps/enigma-markdown-editor.png` |
 
-`./install.sh --prefix DIR` installs the application somewhere else instead, and `--help` prints
-both. The script prints the exact commands to undo itself when it finishes.
+The .NET runtime is bundled with the application, so it runs whatever is installed on the machine.
+From a checkout, `--framework-dependent` builds against an installed .NET 10 runtime instead (a much
+smaller install), `--rid` picks another runtime identifier, and `--from DIR` installs a directory you
+published yourself; `--help` lists them. Run the installer again to upgrade in place — an
+installation made by a 1.x installer in `~/.local/opt/enigma-markdown-editor` is replaced and
+removed. `./uninstall.sh` (beside `install.sh`, in the tarball and in `packaging/linux/`) removes
+those four things and nothing else: your settings and your notes are left as they are.
 
 ## Build from source
 
@@ -473,7 +489,8 @@ tests/
   Enigma.MarkdownEditor.Core.UnitTests
   Enigma.MarkdownEditor.Desktop.UnitTests
 build/                              publish scripts
-packaging/linux/                    desktop entry, icon, install.sh, tarball packer
+packaging/linux/                    install.sh / uninstall.sh, desktop-entry template, icons,
+                                    tarball packer
 msiProfiles/                        one committed .msipkg.json per released version
 docs/
   RELEASE.md                        the release runbook

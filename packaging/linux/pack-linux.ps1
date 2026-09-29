@@ -6,14 +6,19 @@
     Produces artifacts/EnigmaMarkdownEditor-<version>-linux-x64.tar.gz, laid out as:
 
         EnigmaMarkdownEditor-<version>-linux-x64/
-          install.sh                       0755
-          LICENSE.md                       0644
-          app/                             the self-contained publish output
-            Enigma.MarkdownEditor.Desktop  0755
-            ...                            0755 for native code, 0644 otherwise
-          share/
-            enigma-markdown-editor.desktop 0644
-            enigma-markdown-editor.png     0644
+          install.sh                            0755
+          uninstall.sh                          0755
+          LICENSE.md                            0644
+          enigma-markdown-editor.desktop.in     0644
+          icons/
+            enigma-markdown-editor-<N>.png      0644, N = 16 32 48 64 128 256
+          app/                                  the self-contained publish output
+            Enigma.MarkdownEditor.Desktop       0755
+            ...                                 0755 for native code, 0644 otherwise
+
+    That is packaging/linux as it stands in the repository, plus app/: install.sh installs the
+    app/ it finds beside itself instead of building one, so the same two scripts serve a checkout
+    and the unpacked tarball.
 
     The archive is written a header block at a time rather than by shelling out to tar, for one
     reason: the mode bits. A Windows publish folder carries no POSIX permissions, so any tar built
@@ -22,7 +27,7 @@
     the result identical whichever OS packs it, and needs no tar binary on either.
 
     Text entries are written with LF endings whatever the checkout produced: a CR byte on the
-    shebang line stops install.sh from running at all.
+    shebang line stops install.sh and uninstall.sh from running at all.
 
     Runs on Windows PowerShell 5.1 and on PowerShell 7+; see build/Common.ps1 for the shared
     language subset.
@@ -210,12 +215,20 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $OutputPath = Join-Path $ctx.ArtifactsDir "$archiveName.tar.gz"
 }
 
-$desktopSource = Join-Path $PSScriptRoot "$($ctx.PackageId).desktop"
-$iconSource = Join-Path $PSScriptRoot "$($ctx.PackageId).png"
+# The hicolor sizes install.sh and uninstall.sh expect; the three lists move together.
+$iconSizes = @(16, 32, 48, 64, 128, 256)
+
+$desktopSource = Join-Path $PSScriptRoot "$($ctx.PackageId).desktop.in"
 $installSource = Join-Path $PSScriptRoot 'install.sh'
+$uninstallSource = Join-Path $PSScriptRoot 'uninstall.sh'
 $licenseSource = Join-Path $ctx.RepoRoot 'LICENSE.md'
 
-foreach ($required in @($desktopSource, $iconSource, $installSource, $licenseSource)) {
+$iconSources = @()
+foreach ($size in $iconSizes) {
+    $iconSources += Join-Path $PSScriptRoot "icons/$($ctx.PackageId)-$size.png"
+}
+
+foreach ($required in (@($desktopSource, $installSource, $uninstallSource, $licenseSource) + $iconSources)) {
     if (-not (Test-Path -LiteralPath $required)) {
         throw "Required packaging file not found: $required"
     }
@@ -247,10 +260,14 @@ function Add-Entry {
 
 Add-Entry -Name "$archiveName/" -Kind 'dir' -Mode $script:ModeExecutable
 Add-Entry -Name "$archiveName/install.sh" -Kind 'bytes' -Mode $script:ModeExecutable -Bytes (Get-LfBytes $installSource)
+Add-Entry -Name "$archiveName/uninstall.sh" -Kind 'bytes' -Mode $script:ModeExecutable -Bytes (Get-LfBytes $uninstallSource)
 Add-Entry -Name "$archiveName/LICENSE.md" -Kind 'bytes' -Mode $script:ModeRegular -Bytes (Get-LfBytes $licenseSource)
-Add-Entry -Name "$archiveName/share/" -Kind 'dir' -Mode $script:ModeExecutable
-Add-Entry -Name "$archiveName/share/$($ctx.PackageId).desktop" -Kind 'bytes' -Mode $script:ModeRegular -Bytes (Get-LfBytes $desktopSource)
-Add-Entry -Name "$archiveName/share/$($ctx.PackageId).png" -Kind 'file' -Mode $script:ModeRegular -Path $iconSource
+Add-Entry -Name "$archiveName/$($ctx.PackageId).desktop.in" -Kind 'bytes' -Mode $script:ModeRegular -Bytes (Get-LfBytes $desktopSource)
+Add-Entry -Name "$archiveName/icons/" -Kind 'dir' -Mode $script:ModeExecutable
+foreach ($iconSource in $iconSources) {
+    $iconLeaf = Split-Path -Leaf $iconSource
+    Add-Entry -Name "$archiveName/icons/$iconLeaf" -Kind 'file' -Mode $script:ModeRegular -Path $iconSource
+}
 Add-Entry -Name "$archiveName/app/" -Kind 'dir' -Mode $script:ModeExecutable
 
 # Directories before the files in them, and both in a stable order, so the archive is reproducible
