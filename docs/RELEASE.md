@@ -111,7 +111,9 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
 ./install.sh
 ```
 
-- [ ] `install.sh` completes without error and prints the uninstall paths.
+- [ ] `install.sh` completes without error, installs from the bundled `app/` without building
+      anything, and names `uninstall.sh`. `enigma-markdown-editor` in a terminal starts the
+      application (with `~/.local/bin` on the `PATH`).
 - [ ] The application appears in the desktop menu, with its icon, and launches from there — not only
       from the terminal. (This is what proves the `.desktop` `Exec` substitution and the icon
       install; a terminal launch proves neither.)
@@ -163,7 +165,8 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
       window placement and the pane sizes all come back.
 - [ ] **Settings and logs are written** — change a setting, confirm it survives a restart, and
       confirm `~/.config/Enigma.MarkdownEditor/` holds `settings.json` and `logs/app.log`.
-- [ ] Uninstall with the printed commands and confirm the menu entry disappears.
+- [ ] `./uninstall.sh` removes the application, the command, the desktop entry and the icons; the
+      menu entry disappears, and `~/.config/Enigma.MarkdownEditor/` is still there.
 
 ## 3. Merge and tag
 
