@@ -1,6 +1,6 @@
 # FEATURE-4BB7 — Linux installer & uninstaller
 
-**Status: TODO** · Single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · Single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-4bb7-linux-installer`, cut from the run branch at build time.
 **Run:** feature/2026-09-29-linux-installer-release
 

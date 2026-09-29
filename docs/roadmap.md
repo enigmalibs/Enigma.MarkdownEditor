@@ -83,7 +83,7 @@
 | BUG-18AD     | Preview code spans barely visible  | DONE        | docs/plan/BUG-18AD.md     |
 | - PHASE01    | Code-span chip gets its own colour | DONE        | (in BUG-18AD.md)          |
 | - PHASE02    | Code-span chip padding             | DONE        | (in BUG-18AD.md)          |
-| FEATURE-4BB7 | Linux installer & uninstaller      | TODO        | docs/plan/FEATURE-4BB7.md |
+| FEATURE-4BB7 | Linux installer & uninstaller      | DONE        | docs/plan/FEATURE-4BB7.md |
 | FEATURE-3D59 | Release 1.7.0                      | TODO        | docs/plan/FEATURE-3D59.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
