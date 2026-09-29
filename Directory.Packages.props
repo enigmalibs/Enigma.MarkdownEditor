@@ -16,7 +16,7 @@
        System.Buffers / PolySharp are deliberately absent: Core targets net10.0 alone, so the
        netstandard2.0-support pair would only raise NU1510 and fail the zero-warnings build. -->
   <ItemGroup>
-    <PackageVersion Include="Markdig" Version="1.3.2" />
+    <PackageVersion Include="Markdig" Version="1.4.0" />
     <!-- Read/write JSON settings: the AppSettings class, its validator and IConfig<AppSettings> all
          live in Core, so the pin belongs to this group rather than to the Desktop one. -->
     <PackageVersion Include="Enigma.Configuration" Version="1.0.0" />
@@ -54,7 +54,7 @@
        CommunityToolkit.Mvvm but NOT Microsoft.Extensions.DependencyInjection — this package is what
        supplies the container the app composes in App.OnFrameworkInitializationCompleted. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
   </ItemGroup>
 
   <!-- Text editor (consumed from FEATURE-3C44 on). Versioned independently of the Avalonia set:
@@ -67,7 +67,7 @@
   <!-- Tests (MTP-native: xunit.v3 only; coverlet.collector for coverage). No Microsoft.NET.Test.Sdk. -->
   <ItemGroup>
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
 
 </Project>

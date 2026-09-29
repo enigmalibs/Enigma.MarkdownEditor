@@ -1,6 +1,6 @@
 # FEATURE-3D59 — Release 1.7.0
 
-**Status: TODO** · Single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · Single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-3d59-release-1-7-0`, cut from the run branch at build time.
 **Run:** feature/2026-09-29-linux-installer-release
 

@@ -5,7 +5,7 @@
     <!-- The product version. It is what build/Common.ps1 reads to name the artifacts, and what
          msiProfiles/Enigma.MarkdownEditor.Desktop.<version>.msipkg.json mirrors — bump this, the
          Core csproj and the profile together, per docs/RELEASE.md. -->
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <!-- Required by Avalonia's Windows backend (drag & drop, native dialogs). -->
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <!-- Compiled bindings are the default in Avalonia 12; making it explicit documents that every

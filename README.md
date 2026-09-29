@@ -7,10 +7,10 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.6.0** — a new note arrives with its own `#` title already in it; a folder can be
-> given a colour and every tab opened from inside it carries that colour, so a strip of tabs says
-> which folder each note came from; and vim's `o` and `O` carry a list marker onto the line they
-> open, as `Enter` already did. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.7.0** — Linux gets the installer Enigma.GitClient uses: `install.sh` builds the
+> editor straight from a checkout or installs the one in the release tarball, adds an
+> `enigma-markdown-editor` command and a full set of icons, and ships with an `uninstall.sh`. In the
+> preview, code spans now sit on a chip of their own. See [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 

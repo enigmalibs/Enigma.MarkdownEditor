@@ -93,6 +93,14 @@ On the release branch, before merging:
       numbering as it goes), `.` after an `o`, and one `u` taking the marker back with what was typed
       on it. Platform-independent — §2's vim smoke set is where the keys get their Linux exercise.
       This is what `FEATURE-3505` left open.
+- [ ] **Code spans read as chips, in both themes.** Open a note with a `` `code span` `` in a
+      paragraph, in a block quote and in a table header row. In the dark theme each chip is lighter
+      than what surrounds it, in the light theme darker, and in all three places the text has a
+      little space before its chip's edges; a long line never wraps between a chip and its padding.
+      Then drag-select across a sentence holding a chip, copy, and paste into a plain editor: the
+      text arrives without the padding. Platform-independent. The colour's resolution and the
+      padding's indices are covered by tests, but the headless suite renders without Skia, so no
+      test can say how the chip actually looks. This is what `BUG-18AD` left open.
 - [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
       rule.
 
@@ -114,6 +122,10 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
 - [ ] `install.sh` completes without error, installs from the bundled `app/` without building
       anything, and names `uninstall.sh`. `enigma-markdown-editor` in a terminal starts the
       application (with `~/.local/bin` on the `PATH`).
+- [ ] **From a checkout on the same machine**, `./packaging/linux/install.sh` builds the application
+      and installs it over the tarball's install ("Replacing …"); the menu entry still launches it,
+      now as the checkout's build. This is the installer's second source, and the only one that
+      runs `dotnet publish`.
 - [ ] The application appears in the desktop menu, with its icon, and launches from there — not only
       from the terminal. (This is what proves the `.desktop` `Exec` substitution and the icon
       install; a terminal launch proves neither.)
