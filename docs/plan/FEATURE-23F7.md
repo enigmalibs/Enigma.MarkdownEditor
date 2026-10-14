@@ -1,6 +1,6 @@
 # FEATURE-23F7 — Release 1.8.0
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-23f7-release-1-8-0`, cut from the run branch at build time.
 **Run:** feature/2026-10-14-confirm-delete-release
 

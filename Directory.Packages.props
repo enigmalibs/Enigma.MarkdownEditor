@@ -54,7 +54,7 @@
        CommunityToolkit.Mvvm but NOT Microsoft.Extensions.DependencyInjection — this package is what
        supplies the container the app composes in App.OnFrameworkInitializationCompleted. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Text editor (consumed from FEATURE-3C44 on). Versioned independently of the Avalonia set:
