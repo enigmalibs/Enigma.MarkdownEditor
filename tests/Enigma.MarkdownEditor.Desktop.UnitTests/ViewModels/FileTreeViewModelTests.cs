@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -864,18 +865,137 @@ public sealed class FileTreeViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task WithSeveralSelected_DeleteWaitsForASingleSelection()
+    public async Task WithSeveralSelected_DeleteSendsThemAllToTheTrash()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.True(tree.DeleteCommand.CanExecute(null));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        // In the order they were selected, silently, and with their rows — and the selection — gone.
+        Assert.Equal([c, a], _trash.Trashed);
+        Assert.Equal(["b.md"], tree.Roots[0].Children.Select(child => child.Name));
+        Assert.Equal(0, _prompts.PermanentDeletesAsked);
+        Assert.Empty(_infoBar.Shown);
+        Assert.Empty(tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task AFolderAndSomethingInsideIt_TheFolderIsDeletedOnce()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        WriteFile(drafts, "idea.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel folder = Child(tree, "drafts");
+        folder.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        // The file first: which one was clicked first must not decide what the trash is given.
+        tree.SelectedNodes.Add(Assert.Single(folder.Children));
+        tree.SelectedNodes.Add(folder);
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([drafts], _trash.Trashed);
+        Assert.False(Directory.Exists(drafts));
+        Assert.Empty(_infoBar.Shown);
+    }
+
+    [Fact]
+    public async Task WithNoTrash_OneConfirmationCoversTheWholeSelection()
     {
         string workspace = SeedWorkspace("notes");
         string a = WriteFile(workspace, "a.md");
         string b = WriteFile(workspace, "b.md");
 
-        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        FakeTrashService trash = new() { IsAvailable = false };
 
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts, trash: trash);
         tree.SelectedNodes.Add(Child(tree, "a.md"));
         tree.SelectedNodes.Add(Child(tree, "b.md"));
 
-        // A delete that took only the primary entry would be a surprise, so there is none yet.
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        IReadOnlyList<string> asked = Assert.Single(prompts.AskedToDeletePermanently);
+        Assert.Equal(["a.md", "b.md"], asked);
+        Assert.False(File.Exists(a));
+        Assert.False(File.Exists(b));
+        Assert.Equal(FileTreeNodeKind.Empty, Assert.Single(tree.Roots[0].Children).Kind);
+    }
+
+    [Fact]
+    public async Task WithNoTrash_RefusingTheConfirmation_KeepsEveryEntry()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+
+        FakeTrashService trash = new() { IsAvailable = false };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal(1, _prompts.PermanentDeletesAsked);
+        Assert.True(File.Exists(a));
+        Assert.True(File.Exists(b));
+        Assert.Equal(["a.md", "b.md"], tree.Roots[0].Children.Select(child => child.Name));
+    }
+
+    [Fact]
+    public async Task ATrashThatDeclinesOneEntry_AsksAboutThatOneAlone()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        FakeTrashService trash = new() { Declines = ["b.md"] };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts, trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a, c], trash.Trashed);
+        Assert.Equal(["b.md"], Assert.Single(prompts.AskedToDeletePermanently));
+        Assert.False(File.Exists(b));
+    }
+
+    [Fact]
+    public async Task AWorkspaceRootInTheSelection_RefusesTheWholeDelete()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(tree.Roots[0]);
+
         Assert.False(tree.DeleteCommand.CanExecute(null));
 
         // Executed anyway: a disabled command is a courtesy, and the guard has to hold on its own.
@@ -883,9 +1003,59 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Empty(_trash.Trashed);
-        Assert.Equal(0, _prompts.PermanentDeletesAsked);
+        Assert.Equal(0, prompts.PermanentDeletesAsked);
         Assert.True(File.Exists(a));
+        Assert.True(Directory.Exists(workspace));
+    }
+
+    [Fact]
+    public async Task AnInformationalRowInTheSelection_IsLeftOutOfTheDelete()
+    {
+        string workspace = SeedWorkspace("notes");
+        Directory.CreateDirectory(Path.Combine(workspace, "empty"));
+        string a = WriteFile(workspace, "a.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel empty = Child(tree, "empty");
+        empty.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        // What a Shift+click range across an open, empty folder picks up.
+        tree.SelectedNodes.Add(Assert.Single(empty.Children, child => child.IsInformational));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.True(tree.DeleteCommand.CanExecute(null));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a], _trash.Trashed);
+        Assert.Empty(_infoBar.Shown);
+    }
+
+    [Fact]
+    public async Task ATrashThatBreaksPartWay_StopsThereAndSaysSoOnce()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        FakeTrashService trash = new() { BreaksOn = ["b.md"] };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a], trash.Trashed);
         Assert.True(File.Exists(b));
+        Assert.True(File.Exists(c));
+        Assert.Single(_infoBar.Shown);
+        Assert.Equal(0, _prompts.PermanentDeletesAsked);
     }
 
     [Fact]

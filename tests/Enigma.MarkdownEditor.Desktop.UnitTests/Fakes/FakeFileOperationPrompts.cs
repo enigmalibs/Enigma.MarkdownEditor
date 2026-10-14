@@ -19,6 +19,7 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
     private readonly List<string> _askedForNewFileIn = [];
     private readonly List<string> _askedForNewFolderIn = [];
     private readonly List<string> _askedToRename = [];
+    private readonly List<IReadOnlyList<string>> _askedToDeletePermanently = [];
 
     /// <summary>
     /// What the user types for a new file, or <see langword="null"/> to back out.
@@ -54,7 +55,13 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
 
     public int ConflictsAsked { get; private set; }
 
-    public int PermanentDeletesAsked { get; private set; }
+    public int PermanentDeletesAsked => _askedToDeletePermanently.Count;
+
+    /// <summary>
+    /// What each permanent-delete confirmation named, one list per question — a single name for the
+    /// one-entry question, every name for the one asked about a selection.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>> AskedToDeletePermanently => _askedToDeletePermanently;
 
     public Task<string?> AskForNewFileNameAsync(string directory)
     {
@@ -86,7 +93,14 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
 
     public Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory)
     {
-        PermanentDeletesAsked++;
+        _askedToDeletePermanently.Add([name]);
+
+        return Task.FromResult(ConfirmsPermanentDelete);
+    }
+
+    public Task<bool> ConfirmPermanentDeleteAsync(IReadOnlyList<string> names)
+    {
+        _askedToDeletePermanently.Add([.. names]);
 
         return Task.FromResult(ConfirmsPermanentDelete);
     }

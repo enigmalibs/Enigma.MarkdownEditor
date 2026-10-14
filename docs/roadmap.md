@@ -87,9 +87,9 @@
 | FEATURE-3D59 | Release 1.7.0                      | DONE        | docs/plan/FEATURE-3D59.md |
 | FEATURE-1C17 | Enigma.Avalonia.Desktop 1.2.0      | DONE        | docs/plan/FEATURE-1C17.md |
 | FEATURE-425B | No success or info InfoBars        | DONE        | docs/plan/FEATURE-425B.md |
-| FEATURE-4B09 | File tree multi-selection          | IN PROGRESS | docs/plan/FEATURE-4B09.md |
+| FEATURE-4B09 | File tree multi-selection          | DONE        | docs/plan/FEATURE-4B09.md |
 | - PHASE01    | Multi-selection in the tree        | DONE        | (in FEATURE-4B09.md)      |
-| - PHASE02    | Delete the whole selection         | TODO        | (in FEATURE-4B09.md)      |
+| - PHASE02    | Delete the whole selection         | DONE        | (in FEATURE-4B09.md)      |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,

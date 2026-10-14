@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -16,6 +18,11 @@ namespace Enigma.MarkdownEditor.Desktop.Services;
 /// </summary>
 public sealed class FileOperationPrompts : IFileOperationPrompts
 {
+    /// <summary>
+    /// How many names a confirmation for several entries lists before it says how many more there are.
+    /// </summary>
+    private const int ListedNames = 5;
+
     private readonly IContentDialogService _dialogService;
 
     /// <summary>
@@ -124,6 +131,48 @@ public sealed class FileOperationPrompts : IFileOperationPrompts
         });
 
         return result == DialogResult.Primary;
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="ArgumentException">
+    /// <paramref name="names"/> is empty, or one of the names in it is empty or white-space.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="names"/> is <see langword="null"/>.</exception>
+    public async Task<bool> ConfirmPermanentDeleteAsync(IReadOnlyList<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+
+        if ((names.Count == 0) || names.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException("Every entry to delete needs a name, and there has to be one.", nameof(names));
+        }
+
+        DialogResult result = await _dialogService.ShowAsync(dialog =>
+        {
+            dialog.Title = names.Count == 1
+                ? $"Delete '{names[0]}' permanently?"
+                : $"Delete {names.Count} items permanently?";
+            dialog.Content = Message(PermanentDeleteText(names));
+
+            dialog.PrimaryButtonText = "Delete permanently";
+            dialog.CloseButtonText = "Cancel";
+        });
+
+        return result == DialogResult.Primary;
+    }
+
+    // Names the entries rather than counting them — a confirmation that cannot be undone is only worth
+    // asking if the user can see what they are confirming — but only the first few, so that deleting a
+    // long selection does not open a dialog taller than the window.
+    private static string PermanentDeleteText(IReadOnlyList<string> names)
+    {
+        IEnumerable<string> listed = names.Take(ListedNames).Select(name => $"• {name}");
+        string more = names.Count > ListedNames ? $"\n…and {names.Count - ListedNames} more." : string.Empty;
+
+        return "These cannot be moved to the trash, so they would be deleted outright — a folder with " +
+               "everything in it. This cannot be undone.\n\n" +
+               string.Join("\n", listed) +
+               more;
     }
 
     private static TextBlock Message(string text)
