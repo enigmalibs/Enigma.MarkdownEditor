@@ -90,7 +90,7 @@
 | FEATURE-4B09 | File tree multi-selection          | DONE        | docs/plan/FEATURE-4B09.md |
 | - PHASE01    | Multi-selection in the tree        | DONE        | (in FEATURE-4B09.md)      |
 | - PHASE02    | Delete the whole selection         | DONE        | (in FEATURE-4B09.md)      |
-| FEATURE-47F5 | Confirm every file tree delete     | TODO        | docs/plan/FEATURE-47F5.md |
+| FEATURE-47F5 | Confirm every file tree delete     | DONE        | docs/plan/FEATURE-47F5.md |
 | FEATURE-23F7 | Release 1.8.0                      | TODO        | docs/plan/FEATURE-23F7.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`

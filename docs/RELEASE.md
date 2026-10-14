@@ -101,6 +101,18 @@ On the release branch, before merging:
       text arrives without the padding. Platform-independent. The colour's resolution and the
       padding's indices are covered by tests, but the headless suite renders without Skia, so no
       test can say how the chip actually looks. This is what `BUG-18AD` left open.
+- [ ] **Every delete asks first.** Select a note in the tree and press `Delete`: a dialog titled
+      *Delete 'name'?* opens, saying it goes to the recycle bin, and nothing has left the tree yet.
+      *Cancel* — the note is still there. Repeat and press `Escape`, then repeat and click outside
+      the dialog: still there each time. Repeat from the right-click *Delete*, and this time press
+      *Delete*: the row goes and the note is in the recycle bin. Then `Ctrl`+click three entries
+      (one of them a folder with notes in it) and delete them: **one** dialog, titled *Delete 3
+      items?*, naming all three; *Cancel* keeps all three, *Delete* takes all three. Select seven
+      and confirm the dialog names five and says *…and 2 more.* Platform-independent — §2's tree
+      step is where the trash's own name gets its Linux check. Which question is asked, and what it
+      says, is covered by tests through a fake dialog host; that the real dialog opens on the key and
+      the menu, takes focus, and closes on `Escape` is not, because nothing in the suite builds
+      `MainWindow`. This is what `FEATURE-47F5` left open.
 - [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
       rule.
 
@@ -141,8 +153,9 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
       this is the only place a broken `Assets/app-256.png` on Linux would show. `Escape` closes it.
 - [ ] **Workspace** — add a folder, and the tree lists it. Filter the tree. Change a file outside the
       editor and the tree notices.
-- [ ] **Tree operations** — create, rename and move a note. **Delete one and confirm it lands in the
-      system trash**, not nowhere; this is the operation most likely to differ from Windows.
+- [ ] **Tree operations** — create, rename and move a note. **Delete one, answer the confirmation
+      (it must say *trash*, not *recycle bin*), and confirm it lands in the system trash**, not
+      nowhere; this is the operation most likely to differ from Windows.
 - [ ] **Edit and save** — type, `Ctrl+S`, and the file on disk changes. Open a file with CRLF endings
       and a BOM, save it, and confirm both survived.
 - [ ] **Vim smoke set** — `i` … `Esc`, `o` and `O` on a list item (the marker follows), `dw`,

@@ -19,6 +19,7 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
     private readonly List<string> _askedForNewFileIn = [];
     private readonly List<string> _askedForNewFolderIn = [];
     private readonly List<string> _askedToRename = [];
+    private readonly List<IReadOnlyList<string>> _askedToMoveToTrash = [];
     private readonly List<IReadOnlyList<string>> _askedToDeletePermanently = [];
 
     /// <summary>
@@ -43,6 +44,12 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
     public MoveResolution Resolution { get; init; } = MoveResolution.Cancel;
 
     /// <summary>
+    /// Whether the user confirms a delete that goes to the trash. Yes unless a test says otherwise, so
+    /// that a test about what a delete does describes a user who went through with it.
+    /// </summary>
+    public bool ConfirmsMoveToTrash { get; init; } = true;
+
+    /// <summary>
     /// Whether the user confirms a delete that cannot be undone.
     /// </summary>
     public bool ConfirmsPermanentDelete { get; init; }
@@ -54,6 +61,14 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
     public IReadOnlyList<string> AskedToRename => _askedToRename;
 
     public int ConflictsAsked { get; private set; }
+
+    public int TrashConfirmationsAsked => _askedToMoveToTrash.Count;
+
+    /// <summary>
+    /// What each move-to-trash confirmation named, one list per question — a single name for the
+    /// one-entry question, every name for the one asked about a selection.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>> AskedToMoveToTrash => _askedToMoveToTrash;
 
     public int PermanentDeletesAsked => _askedToDeletePermanently.Count;
 
@@ -89,6 +104,20 @@ internal sealed class FakeFileOperationPrompts : IFileOperationPrompts
         ConflictsAsked++;
 
         return Task.FromResult(Resolution);
+    }
+
+    public Task<bool> ConfirmMoveToTrashAsync(string name, bool isDirectory)
+    {
+        _askedToMoveToTrash.Add([name]);
+
+        return Task.FromResult(ConfirmsMoveToTrash);
+    }
+
+    public Task<bool> ConfirmMoveToTrashAsync(IReadOnlyList<string> names)
+    {
+        _askedToMoveToTrash.Add([.. names]);
+
+        return Task.FromResult(ConfirmsMoveToTrash);
     }
 
     public Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory)
