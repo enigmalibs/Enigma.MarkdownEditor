@@ -842,8 +842,9 @@ public sealed class FileTreeViewModelTests : IDisposable
         // is the one users learn to click through.
         Assert.Equal(0, _prompts.PermanentDeletesAsked);
 
-        // It does say where it went, though — a row vanishing looks the same either way.
-        Assert.Single(_infoBar.Shown);
+        // And no InfoBar either: that is for what went wrong, and the row leaving the tree is the
+        // whole report of a delete that happened.
+        Assert.Empty(_infoBar.Shown);
     }
 
     [Fact]
