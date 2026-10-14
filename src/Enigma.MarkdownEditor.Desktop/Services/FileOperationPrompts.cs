@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -16,6 +18,11 @@ namespace Enigma.MarkdownEditor.Desktop.Services;
 /// </summary>
 public sealed class FileOperationPrompts : IFileOperationPrompts
 {
+    /// <summary>
+    /// How many names a confirmation for several entries lists before it says how many more there are.
+    /// </summary>
+    private const int ListedNames = 5;
+
     private readonly IContentDialogService _dialogService;
 
     /// <summary>
@@ -106,20 +113,104 @@ public sealed class FileOperationPrompts : IFileOperationPrompts
     /// <inheritdoc />
     /// <exception cref="ArgumentException"><paramref name="name"/> is empty or white-space.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
-    public async Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory)
+    public Task<bool> ConfirmMoveToTrashAsync(string name, bool isDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         string what = isDirectory ? "folder and everything in it" : "file";
 
+        return ConfirmAsync(
+            $"Delete '{name}'?",
+            $"The {what} will be moved to the {TrashName}, where it can be restored from.",
+            "Delete");
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="ArgumentException">
+    /// <paramref name="names"/> is empty, or one of the names in it is empty or white-space.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="names"/> is <see langword="null"/>.</exception>
+    public Task<bool> ConfirmMoveToTrashAsync(IReadOnlyList<string> names)
+    {
+        ThrowIfNoNames(names);
+
+        return ConfirmAsync(
+            names.Count == 1 ? $"Delete '{names[0]}'?" : $"Delete {names.Count} items?",
+            $"These will be moved to the {TrashName}, where they can be restored from — a folder with " +
+            $"everything in it.\n\n" +
+            Listing(names),
+            "Delete");
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="ArgumentException"><paramref name="name"/> is empty or white-space.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
+    public Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        string what = isDirectory ? "folder and everything in it" : "file";
+
+        return ConfirmAsync(
+            $"Delete '{name}' permanently?",
+            $"It cannot be moved to the {TrashName}, so the {what} would be deleted outright. This " +
+            $"cannot be undone.",
+            "Delete permanently");
+    }
+
+    /// <inheritdoc />
+    /// <exception cref="ArgumentException">
+    /// <paramref name="names"/> is empty, or one of the names in it is empty or white-space.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="names"/> is <see langword="null"/>.</exception>
+    public Task<bool> ConfirmPermanentDeleteAsync(IReadOnlyList<string> names)
+    {
+        ThrowIfNoNames(names);
+
+        return ConfirmAsync(
+            names.Count == 1 ? $"Delete '{names[0]}' permanently?" : $"Delete {names.Count} items permanently?",
+            $"These cannot be moved to the {TrashName}, so they would be deleted outright — a folder " +
+            $"with everything in it. This cannot be undone.\n\n" +
+            Listing(names),
+            "Delete permanently");
+    }
+
+    // What the platform calls the place a deleted entry can be fetched back from — the name the user
+    // knows it by, rather than one term for every system.
+    private static string TrashName => OperatingSystem.IsWindows() ? "recycle bin" : "trash";
+
+    private static void ThrowIfNoNames(IReadOnlyList<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+
+        if ((names.Count == 0) || names.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException("Every entry to delete needs a name, and there has to be one.", nameof(names));
+        }
+    }
+
+    // Names the entries rather than counting them — a confirmation is only worth asking if the user
+    // can see what they are confirming — but only the first few, so that deleting a long selection
+    // does not open a dialog taller than the window.
+    private static string Listing(IReadOnlyList<string> names)
+    {
+        IEnumerable<string> listed = names.Take(ListedNames).Select(name => $"• {name}");
+        string more = names.Count > ListedNames ? $"\n…and {names.Count - ListedNames} more." : string.Empty;
+
+        return string.Join("\n", listed) + more;
+    }
+
+    // A question about removing something from disk. No default button, and only an explicit press of
+    // the primary one counts: Escape and a click on the scrim resolve as None, and a question about
+    // destroying something has exactly one safe reading of no answer.
+    private async Task<bool> ConfirmAsync(string title, string message, string confirmText)
+    {
         DialogResult result = await _dialogService.ShowAsync(dialog =>
         {
-            dialog.Title = $"Delete '{name}' permanently?";
-            dialog.Content = Message(
-                $"There is no trash on this system to move it to, so the {what} would be deleted " +
-                $"outright. This cannot be undone.");
+            dialog.Title = title;
+            dialog.Content = Message(message);
 
-            dialog.PrimaryButtonText = "Delete permanently";
+            dialog.PrimaryButtonText = confirmText;
             dialog.CloseButtonText = "Cancel";
         });
 

@@ -37,7 +37,7 @@
          very version the test group below pins, so the two move together as well. -->
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
-    <PackageVersion Include="Enigma.Avalonia.Desktop" Version="1.0.0" />
+    <PackageVersion Include="Enigma.Avalonia.Desktop" Version="1.2.0" />
     <PackageVersion Include="Enigma.Icons.Avalonia" Version="1.0.0" />
   </ItemGroup>
 
@@ -54,7 +54,7 @@
        CommunityToolkit.Mvvm but NOT Microsoft.Extensions.DependencyInjection — this package is what
        supplies the container the app composes in App.OnFrameworkInitializationCompleted. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Text editor (consumed from FEATURE-3C44 on). Versioned independently of the Avalonia set:

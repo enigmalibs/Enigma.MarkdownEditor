@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Enigma.MarkdownEditor.Core.Files;
 
@@ -52,14 +53,52 @@ public interface IFileOperationPrompts
     Task<MoveResolution> AskHowToResolveAsync(string name, bool isDirectory, string targetDirectory);
 
     /// <summary>
-    /// Asks whether to delete an entry outright, because this platform has no trash to move it to.
+    /// Asks whether to move an entry to the trash.
     /// </summary>
     /// <param name="name">What is about to be deleted.</param>
     /// <param name="isDirectory">Whether it is a directory.</param>
     /// <returns><see langword="true"/> only when the user explicitly confirmed.</returns>
     /// <remarks>
-    /// The one delete that asks. A trashed entry can be fetched back out of the recycle bin, so
-    /// confirming it would be a click the user learns to ignore; this one cannot be undone at all.
+    /// Every delete asks before anything leaves the disk, the recoverable ones included. This is the
+    /// question asked first whenever there is a trash; <see cref="ConfirmPermanentDeleteAsync(string, bool)"/>
+    /// is asked instead of it when there is none, and after it for whatever the trash then declines.
+    /// </remarks>
+    Task<bool> ConfirmMoveToTrashAsync(string name, bool isDirectory);
+
+    /// <summary>
+    /// Asks, once for all of them, whether to move several entries to the trash.
+    /// </summary>
+    /// <param name="names">What is about to be deleted, in the order it was selected.</param>
+    /// <returns><see langword="true"/> only when the user explicitly confirmed.</returns>
+    /// <remarks>
+    /// One question for a whole selection rather than one per entry: a dialog per file is the kind a
+    /// user learns to click through, which is the last thing a confirmation should teach.
+    /// </remarks>
+    Task<bool> ConfirmMoveToTrashAsync(IReadOnlyList<string> names);
+
+    /// <summary>
+    /// Asks whether to delete an entry outright, because it cannot be moved to the trash.
+    /// </summary>
+    /// <param name="name">What is about to be deleted.</param>
+    /// <param name="isDirectory">Whether it is a directory.</param>
+    /// <returns><see langword="true"/> only when the user explicitly confirmed.</returns>
+    /// <remarks>
+    /// Asked instead of <see cref="ConfirmMoveToTrashAsync(string, bool)"/> when the platform has no
+    /// trash, so that a delete asks once rather than twice. When the trash is there but declines the
+    /// entry, it is asked as well, after the trash question: agreeing to a delete that can be undone
+    /// is not agreeing to one that cannot.
     /// </remarks>
     Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory);
+
+    /// <summary>
+    /// Asks, once for all of them, whether to delete several entries outright, because none of them
+    /// can go to the trash.
+    /// </summary>
+    /// <param name="names">What is about to be deleted, in the order it was selected.</param>
+    /// <returns><see langword="true"/> only when the user explicitly confirmed.</returns>
+    /// <remarks>
+    /// One question for a whole selection, for the reason <see cref="ConfirmMoveToTrashAsync(IReadOnlyList{string})"/>
+    /// gives — and all the more so for a delete that cannot be undone.
+    /// </remarks>
+    Task<bool> ConfirmPermanentDeleteAsync(IReadOnlyList<string> names);
 }

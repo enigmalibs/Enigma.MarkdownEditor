@@ -7,10 +7,10 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.7.0** — Linux gets the installer Enigma.GitClient uses: `install.sh` builds the
-> editor straight from a checkout or installs the one in the release tarball, adds an
-> `enigma-markdown-editor` command and a full set of icons, and ships with an `uninstall.sh`. In the
-> preview, code spans now sit on a chip of their own. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.8.0** — Select several entries in the file tree with `Ctrl`+click or
+> `Shift`+click and delete them together. Every delete now asks first, naming what it is about to
+> remove, and the InfoBar only ever opens when something went wrong. See
+> [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 
@@ -40,8 +40,9 @@ here.*
 - A workspace is a set of folders. Add as many as you like; the tree lists, filters and watches them
   all, and picks up changes made outside the editor.
 - Create, rename, move and delete notes and folders from the tree. A new note arrives with its own
-  `#` title already in it, taken from the name you gave it. Deletes go to the system trash, not to
-  nowhere.
+  `#` title already in it, taken from the name you gave it. A delete always asks first, naming what
+  it is about to remove, and then goes to the system trash, not to nowhere. Select several entries
+  with `Ctrl`+click or `Shift`+click to delete them all at once, with one question for the lot.
 - Markdown only by default; a setting shows every file instead.
 - Give a folder a colour from its right-click menu — eight to pick from — and it carries a bar in that
   colour in the tree. **Every tab opened from inside it carries the same bar**, so a strip of eight
