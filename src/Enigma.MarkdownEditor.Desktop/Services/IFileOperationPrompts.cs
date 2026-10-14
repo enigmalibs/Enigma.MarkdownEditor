@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Enigma.MarkdownEditor.Core.Files;
 
@@ -62,4 +63,17 @@ public interface IFileOperationPrompts
     /// confirming it would be a click the user learns to ignore; this one cannot be undone at all.
     /// </remarks>
     Task<bool> ConfirmPermanentDeleteAsync(string name, bool isDirectory);
+
+    /// <summary>
+    /// Asks, once for all of them, whether to delete several entries outright, because none of them
+    /// can go to the trash.
+    /// </summary>
+    /// <param name="names">What is about to be deleted, in the order it was selected.</param>
+    /// <returns><see langword="true"/> only when the user explicitly confirmed.</returns>
+    /// <remarks>
+    /// One question for a whole selection rather than one per entry: a dialog per file is the kind a
+    /// user learns to click through, which is the last thing a delete that cannot be undone should
+    /// teach.
+    /// </remarks>
+    Task<bool> ConfirmPermanentDeleteAsync(IReadOnlyList<string> names);
 }

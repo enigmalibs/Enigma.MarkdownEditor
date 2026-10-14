@@ -120,7 +120,7 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
             () => CanActOnSelection);
         DeleteCommand = new AsyncRelayCommand(
             () => RunAsync(DeleteAsync, "This could not be deleted"),
-            () => CanActOnSelection);
+            () => CanDeleteSelection);
         SetColorCommand = new AsyncRelayCommand<FolderColor?>(
             color => RunAsync(token => SetColorAsync(color, token), "The colour could not be saved"),
             _ => ColorTarget is not null);
@@ -194,7 +194,7 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     public bool HasRoots => Roots.Count > 0;
 
     /// <summary>
-    /// Gets a value indicating whether the selection is one entry that can be renamed or deleted.
+    /// Gets a value indicating whether the selection is one entry that can be renamed.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -204,12 +204,19 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     /// that keeps the two in step.
     /// </para>
     /// <para>
-    /// So is a selection of several: renaming several entries to one name has no meaning, and a
-    /// delete that took only one of them would be a surprise.
+    /// So is a selection of several: renaming several entries to one name has no meaning. Deleting
+    /// several does, and is answered separately.
     /// </para>
     /// </remarks>
     public bool CanActOnSelection
         => IsSingleSelection && SelectedNode is { IsRoot: false } node && (node.IsDirectory || node.IsFile);
+
+    // Whether Delete has anything to act on: at least one file or folder, and no workspace root. A
+    // root is refused for the reason CanActOnSelection gives, and a selection that holds one is
+    // refused as a whole rather than half-deleted. Informational rows are neither — a Shift+click range
+    // across an open, empty folder picks up its "Nothing here" row, and that must not disable Delete.
+    private bool CanDeleteSelection
+        => SelectedNodes.All(node => !node.IsRoot) && SelectedNodes.Any(node => node.IsDirectory || node.IsFile);
 
     /// <summary>
     /// Gets or sets a value indicating whether the tree lists every file rather than markdown alone.
@@ -554,33 +561,78 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
         }
     }
 
+    // Every entry of the selection goes to the trash first; whatever the trash would not take is then
+    // asked about once, as a whole, and deleted outright only if the user says so. A failure stops the
+    // batch where it happened and is reported once by RunAsync: what was trashed before it stays
+    // trashed, which is recoverable, and the watcher re-reads the folders it touched.
     private async Task DeleteAsync(CancellationToken cancellationToken)
     {
-        if (!CanActOnSelection || (SelectedNode is not { } node))
+        if (!CanDeleteSelection)
         {
             return;
         }
 
-        string? parent = Path.GetDirectoryName(node.FullPath);
-        bool trashed = _trash.IsAvailable && await _trash.MoveToTrashAsync(node.FullPath, cancellationToken);
+        List<FileTreeNodeViewModel> targets = DeletionTargets();
+        List<FileTreeNodeViewModel> declined = [];
+        List<string> touched = [];
 
-        if (!trashed)
+        foreach (FileTreeNodeViewModel node in targets)
         {
-            // The trash declined, or there is none. This is the only delete that asks, because it is
-            // the only one that cannot be undone.
-            if (!await _prompts.ConfirmPermanentDeleteAsync(node.Name, node.IsDirectory))
+            if (_trash.IsAvailable && await _trash.MoveToTrashAsync(node.FullPath, cancellationToken))
             {
-                return;
+                Touch(touched, node);
             }
+            else
+            {
+                declined.Add(node);
+            }
+        }
 
-            await FileOperations.DeleteAsync(node.FullPath, cancellationToken);
+        // The trash declined these, or there is none. This is the only delete that asks, because it
+        // is the only one that cannot be undone.
+        if ((declined.Count > 0) && await ConfirmPermanentDeleteAsync(declined))
+        {
+            foreach (FileTreeNodeViewModel node in declined)
+            {
+                await FileOperations.DeleteAsync(node.FullPath, cancellationToken);
+                Touch(touched, node);
+            }
         }
 
         // Nothing is reported on success: the InfoBar is for what went wrong, and a delete that
-        // happened is announced by its row leaving the tree.
-        if (parent is not null)
+        // happened is announced by its rows leaving the tree — and with them, the selection.
+        foreach (string directory in touched)
         {
-            await ReloadDirectoryAsync(parent, cancellationToken);
+            await ReloadDirectoryAsync(directory, cancellationToken);
+        }
+    }
+
+    // What a delete is given: the files and folders of the selection — informational rows are not
+    // entries — reduced to the outermost, so that nothing inside a selected folder is deleted twice.
+    private List<FileTreeNodeViewModel> DeletionTargets()
+    {
+        List<FileTreeNodeViewModel> entries = [.. SelectedNodes.Where(node => node.IsDirectory || node.IsFile)];
+        HashSet<string> outermost = new(
+            FileSelection.Outermost(entries.Select(node => node.FullPath)),
+            WorkspaceValidation.PathComparer);
+
+        // Remove rather than Contains: should the same path be selected twice, it is deleted once.
+        return [.. entries.Where(node => outermost.Remove(node.FullPath))];
+    }
+
+    private Task<bool> ConfirmPermanentDeleteAsync(List<FileTreeNodeViewModel> declined)
+        => declined.Count == 1
+            ? _prompts.ConfirmPermanentDeleteAsync(declined[0].Name, declined[0].IsDirectory)
+            : _prompts.ConfirmPermanentDeleteAsync([.. declined.Select(node => node.Name)]);
+
+    // Records the folder an entry was deleted from, once, so that each is re-read once however many
+    // of its entries went.
+    private static void Touch(List<string> touched, FileTreeNodeViewModel node)
+    {
+        if ((Path.GetDirectoryName(node.FullPath) is { } parent) &&
+            !touched.Contains(parent, WorkspaceValidation.PathComparer))
+        {
+            touched.Add(parent);
         }
     }
 
