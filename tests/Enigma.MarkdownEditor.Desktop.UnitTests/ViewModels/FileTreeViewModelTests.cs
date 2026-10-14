@@ -882,7 +882,9 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
-        // In the order they were selected, silently, and with their rows — and the selection — gone.
+        // One question for the whole selection, naming every entry in the order they were selected;
+        // then the trash, in that same order, and their rows — and the selection — gone.
+        Assert.Equal(["c.md", "a.md"], Assert.Single(_prompts.AskedToMoveToTrash));
         Assert.Equal([c, a], _trash.Trashed);
         Assert.Equal(["b.md"], tree.Roots[0].Children.Select(child => child.Name));
         Assert.Equal(0, _prompts.PermanentDeletesAsked);
@@ -909,6 +911,8 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        // The question names what is actually deleted: the folder, not the file it takes with it.
+        Assert.Equal(["drafts"], Assert.Single(_prompts.AskedToMoveToTrash));
         Assert.Equal([drafts], _trash.Trashed);
         Assert.False(Directory.Exists(drafts));
         Assert.Empty(_infoBar.Shown);
@@ -931,8 +935,10 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        // The permanent question is the only one: there is no trash to ask about first.
         IReadOnlyList<string> asked = Assert.Single(prompts.AskedToDeletePermanently);
         Assert.Equal(["a.md", "b.md"], asked);
+        Assert.Equal(0, prompts.TrashConfirmationsAsked);
         Assert.False(File.Exists(a));
         Assert.False(File.Exists(b));
         Assert.Equal(FileTreeNodeKind.Empty, Assert.Single(tree.Roots[0].Children).Kind);
@@ -955,6 +961,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Equal(1, _prompts.PermanentDeletesAsked);
+        Assert.Equal(0, _prompts.TrashConfirmationsAsked);
         Assert.True(File.Exists(a));
         Assert.True(File.Exists(b));
         Assert.Equal(["a.md", "b.md"], tree.Roots[0].Children.Select(child => child.Name));
@@ -979,9 +986,35 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        // Asked about all three first, then about the one the trash would not take: agreeing to a
+        // delete that can be undone is not agreeing to one that cannot.
+        Assert.Equal(["a.md", "b.md", "c.md"], Assert.Single(prompts.AskedToMoveToTrash));
         Assert.Equal([a, c], trash.Trashed);
         Assert.Equal(["b.md"], Assert.Single(prompts.AskedToDeletePermanently));
         Assert.False(File.Exists(b));
+    }
+
+    [Fact]
+    public async Task ATrashThatDeclinesOneEntry_RefusingTheSecondQuestion_KeepsThatOne()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+
+        FakeTrashService trash = new() { Declines = ["b.md"] };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        // The yes to the trash covered what the trash took; the declined entry needed a yes of its own.
+        Assert.Equal([a], trash.Trashed);
+        Assert.Equal(["b.md"], Assert.Single(_prompts.AskedToDeletePermanently));
+        Assert.True(File.Exists(b));
+        Assert.Equal(["b.md"], tree.Roots[0].Children.Select(child => child.Name));
     }
 
     [Fact]
@@ -1003,6 +1036,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Empty(_trash.Trashed);
+        Assert.Equal(0, prompts.TrashConfirmationsAsked);
         Assert.Equal(0, prompts.PermanentDeletesAsked);
         Assert.True(File.Exists(a));
         Assert.True(Directory.Exists(workspace));
@@ -1029,6 +1063,8 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        // Left out of the question too: the user is not asked to confirm deleting "Nothing here".
+        Assert.Equal(["a.md"], Assert.Single(_prompts.AskedToMoveToTrash));
         Assert.Equal([a], _trash.Trashed);
         Assert.Empty(_infoBar.Shown);
     }
@@ -1051,6 +1087,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        Assert.Equal(1, _prompts.TrashConfirmationsAsked);
         Assert.Equal([a], trash.Trashed);
         Assert.True(File.Exists(b));
         Assert.True(File.Exists(c));
@@ -1189,6 +1226,7 @@ public sealed class FileTreeViewModelTests : IDisposable
 
         Assert.True(Directory.Exists(workspace));
         Assert.Empty(prompts.AskedToRename);
+        Assert.Equal(0, prompts.TrashConfirmationsAsked);
         Assert.Empty(_trash.Trashed);
     }
 
@@ -1209,8 +1247,9 @@ public sealed class FileTreeViewModelTests : IDisposable
         Assert.False(File.Exists(note));
         Assert.Equal(["b.md"], tree.Roots[0].Children.Select(child => child.Name));
 
-        // No confirmation: it went somewhere it can be fetched back from, and a prompt on every delete
-        // is the one users learn to click through.
+        // Asked first, naming it — every delete is — and only once: it went somewhere it can be
+        // fetched back from, so there was nothing to ask about deleting it outright.
+        Assert.Equal(["a.md"], Assert.Single(_prompts.AskedToMoveToTrash));
         Assert.Equal(0, _prompts.PermanentDeletesAsked);
 
         // And no InfoBar either: that is for what went wrong, and the row leaving the tree is the
@@ -1236,6 +1275,57 @@ public sealed class FileTreeViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task RefusingTheConfirmation_LeavesTheFolderAndWhatIsInsideIt()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        string idea = WriteFile(drafts, "idea.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsMoveToTrash = false };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+        FileTreeNodeViewModel folder = Assert.Single(tree.Roots[0].Children);
+        tree.SelectedNode = folder;
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal(["drafts"], Assert.Single(prompts.AskedToMoveToTrash));
+        Assert.Empty(_trash.Trashed);
+        Assert.True(File.Exists(idea));
+        Assert.Equal(["drafts"], tree.Roots[0].Children.Select(child => child.Name));
+        Assert.Equal([folder], tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task RefusingTheConfirmation_LeavesEveryEntryOfTheSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsMoveToTrash = false };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        // A no is the whole answer: nothing is trashed, nothing is asked about deleting outright, and
+        // nothing is reported — the user is looking at exactly what they decided to keep.
+        Assert.Equal(1, prompts.TrashConfirmationsAsked);
+        Assert.Empty(_trash.Trashed);
+        Assert.Equal(0, prompts.PermanentDeletesAsked);
+        Assert.True(File.Exists(a));
+        Assert.True(File.Exists(b));
+        Assert.Equal(["a.md", "b.md"], tree.Roots[0].Children.Select(child => child.Name));
+        Assert.Equal(2, tree.SelectedNodes.Count);
+        Assert.Empty(_infoBar.Shown);
+    }
+
+    [Fact]
     public async Task DeletingWithNoTrash_AsksFirstAndThenDeletesOutright()
     {
         string workspace = SeedWorkspace("notes");
@@ -1251,6 +1341,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Equal(1, prompts.PermanentDeletesAsked);
+        Assert.Equal(0, prompts.TrashConfirmationsAsked);
         Assert.False(File.Exists(note));
         Assert.Equal(FileTreeNodeKind.Empty, Assert.Single(tree.Roots[0].Children).Kind);
     }
@@ -1270,6 +1361,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Equal(1, _prompts.PermanentDeletesAsked);
+        Assert.Equal(0, _prompts.TrashConfirmationsAsked);
         Assert.True(File.Exists(note));
         Assert.Equal(["a.md"], tree.Roots[0].Children.Select(child => child.Name));
     }
@@ -1290,6 +1382,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await tree.DeleteCommand.ExecuteAsync(null);
         await _dispatcher.DrainAsync();
 
+        Assert.Equal(1, prompts.TrashConfirmationsAsked);
         Assert.Equal(1, prompts.PermanentDeletesAsked);
         Assert.False(File.Exists(note));
     }
@@ -1309,6 +1402,7 @@ public sealed class FileTreeViewModelTests : IDisposable
         await _dispatcher.DrainAsync();
 
         Assert.Single(_infoBar.Shown);
+        Assert.Equal(1, _prompts.TrashConfirmationsAsked);
         Assert.Equal(0, _prompts.PermanentDeletesAsked);
         Assert.True(File.Exists(note));
     }

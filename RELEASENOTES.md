@@ -1,3 +1,76 @@
+# Enigma Markdown Editor v1.8.0 Release Notes
+
+A minor release about the file tree. You can now select several entries at once and delete them
+together. And every delete now asks before anything leaves the disk, the ones going to the recycle
+bin included, naming what it is about to remove. The InfoBar has also become a signal: it opens only
+when something went wrong, and in the dark theme it stands out from the panels around it. Nothing in
+your settings, workspaces or sessions changed shape, and none of them needs a migration.
+
+## New Features
+
+- **Select several entries in the file tree.** `Ctrl`+click adds or removes one, `Shift`+click (or
+  `Shift` and the arrow keys) selects a range. Right-clicking inside a selection keeps it, so the
+  context menu acts on all of it; right-clicking outside it selects that row alone, as before.
+  *New file* and *New folder* still work with several rows selected, creating where they would for
+  the first entry you picked; *Rename* and *Colour* need exactly one.
+- **Delete the whole selection at once.** Everything selected goes to the recycle bin (the trash on
+  Linux) after one question. A folder selected together with something inside it is deleted once,
+  as the folder. A selection that includes a workspace root is refused as a whole: a root is
+  removed from its workspace in *Manage workspaces*, never deleted from the tree. If something goes
+  wrong part-way, the delete stops there and says so once; what was already in the recycle bin
+  stays there, and the rest is untouched.
+
+## Changes
+
+- **Every delete asks first.** Until now a delete that went to the recycle bin happened
+  immediately, and only a delete that could not go there asked. Now pressing `Delete`, or choosing
+  *Delete* from the tree's menu, always opens a question first:
+  - it names what will be removed: *Delete 'name'?*, or *Delete 3 items?* listing up to five names
+    and then *…and N more*;
+  - it says the entries go to the recycle bin, or to the trash on Linux, where they can be restored
+    from;
+  - **nothing is touched** until you press *Delete*. *Cancel*, `Escape` or a click outside the
+    dialog leaves everything where it was.
+
+  Without a recycle bin, the existing *Delete permanently?* question is the only one. If the recycle
+  bin refuses some entries after you said yes (a different drive, typically), you are still asked
+  separately before those are deleted for good. That second question now says the entry cannot go
+  to the recycle bin, rather than that there is none.
+- **No more "moved to the recycle bin" bar.** A delete that worked is reported by its rows leaving
+  the tree. The InfoBar now only ever opens for a warning or an error, so a bar appearing always
+  means something needs your attention.
+- **Warnings and errors are easier to spot in the dark theme.** The InfoBar's fills are lighter
+  tints in the dark theme, so a warning or an error no longer sits level with the panels around it.
+  The vim mode chip's text is now the primary foreground in insert and visual mode, to stay readable
+  on those lighter fills. The chip's fill and border still carry the mode's colour. The light theme
+  is unchanged.
+
+## Dependencies
+
+- **`Enigma.Avalonia.Desktop` moves from 1.0.0 to 1.2.0**, the control library behind the InfoBar,
+  the dialogs and the theme. It builds against the Avalonia already pinned, so it moved on its own.
+- **`Microsoft.Extensions.Hosting` moves from 10.0.12 to 10.0.13**, a patch bump in the .NET 10
+  band.
+- **Deliberately held back:** the version-coupled Avalonia set (`Avalonia`, `.Desktop`,
+  `.Themes.Fluent`, `.Fonts.Inter` and the two headless test packages) stays at 12.1.2 although
+  12.1.4 is out. A coupled set moves as a set, on its own. `xunit.v3` stays at 3.2.2 (4.0.2 is out):
+  a major test-framework bump is its own piece of work, and the Avalonia headless test harness at
+  12.1.2 is built against 3.2.2.
+
+## Compatibility
+
+- **Unchanged from 1.7.0 where it matters.** Still **.NET 10** and **Avalonia 12.1.2**, still
+  **Windows x64** and **Linux x64**, both shipped **self-contained**. The Windows MSI and the Linux
+  tarball are unchanged apart from their version.
+- **Your data is read as it was left.** `settings.json`, `workspaces.json` and a stored session gain
+  nothing and lose nothing, so there is nothing to migrate, in either direction between 1.7.0 and
+  1.8.0.
+
+## Version
+
+- **1.8.0**: a SemVer MINOR release. Functionality was added (multi-selection, deleting a
+  selection), deleting now confirms first, and nothing you depend on changed incompatibly.
+
 # Enigma Markdown Editor v1.7.0 Release Notes
 
 A minor release, and most of it happens before the application starts: installing it on Linux. The
