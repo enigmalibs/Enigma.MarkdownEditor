@@ -1,6 +1,6 @@
 # FEATURE-47F5 — Confirm every file tree delete
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-47f5-confirm-delete`, cut from the run branch at build time.
 **Run:** feature/2026-10-14-confirm-delete-release
 

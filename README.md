@@ -40,8 +40,9 @@ here.*
 - A workspace is a set of folders. Add as many as you like; the tree lists, filters and watches them
   all, and picks up changes made outside the editor.
 - Create, rename, move and delete notes and folders from the tree. A new note arrives with its own
-  `#` title already in it, taken from the name you gave it. Deletes go to the system trash, not to
-  nowhere. Select several entries with `Ctrl`+click or `Shift`+click to delete them all at once.
+  `#` title already in it, taken from the name you gave it. A delete always asks first, naming what
+  it is about to remove, and then goes to the system trash, not to nowhere. Select several entries
+  with `Ctrl`+click or `Shift`+click to delete them all at once, with one question for the lot.
 - Markdown only by default; a setting shows every file instead.
 - Give a folder a colour from its right-click menu — eight to pick from — and it carries a bar in that
   colour in the tree. **Every tab opened from inside it carries the same bar**, so a strip of eight

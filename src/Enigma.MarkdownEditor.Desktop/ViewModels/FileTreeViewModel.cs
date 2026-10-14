@@ -273,7 +273,8 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     public IAsyncRelayCommand RenameCommand { get; }
 
     /// <summary>
-    /// Gets the command that sends the selection to the trash. Bound to Delete.
+    /// Gets the command that sends the selection to the trash, once the user has confirmed it. Bound
+    /// to Delete.
     /// </summary>
     public IAsyncRelayCommand DeleteCommand { get; }
 
@@ -561,10 +562,12 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Every entry of the selection goes to the trash first; whatever the trash would not take is then
-    // asked about once, as a whole, and deleted outright only if the user says so. A failure stops the
-    // batch where it happened and is reported once by RunAsync: what was trashed before it stays
-    // trashed, which is recoverable, and the watcher re-reads the folders it touched.
+    // Nothing leaves the disk before the user has said yes to it. With a trash, the whole selection is
+    // asked about once and then trashed; whatever the trash would not take is asked about again, as a
+    // whole, because agreeing to a delete that can be undone is not agreeing to one that cannot.
+    // Without a trash, that second question is the only one. A failure stops the batch where it
+    // happened and is reported once by RunAsync: what was trashed before it stays trashed, which is
+    // recoverable, and the watcher re-reads the folders it touched.
     private async Task DeleteAsync(CancellationToken cancellationToken)
     {
         if (!CanDeleteSelection)
@@ -572,24 +575,36 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Taken before asking: the answer is about the entries the user was shown, not about whatever
+        // the selection holds by the time the dialog closes.
         List<FileTreeNodeViewModel> targets = DeletionTargets();
         List<FileTreeNodeViewModel> declined = [];
         List<string> touched = [];
 
-        foreach (FileTreeNodeViewModel node in targets)
+        if (_trash.IsAvailable)
         {
-            if (_trash.IsAvailable && await _trash.MoveToTrashAsync(node.FullPath, cancellationToken))
+            if (!await ConfirmMoveToTrashAsync(targets))
             {
-                Touch(touched, node);
+                return;
             }
-            else
+
+            foreach (FileTreeNodeViewModel node in targets)
             {
-                declined.Add(node);
+                if (await _trash.MoveToTrashAsync(node.FullPath, cancellationToken))
+                {
+                    Touch(touched, node);
+                }
+                else
+                {
+                    declined.Add(node);
+                }
             }
         }
+        else
+        {
+            declined.AddRange(targets);
+        }
 
-        // The trash declined these, or there is none. This is the only delete that asks, because it
-        // is the only one that cannot be undone.
         if ((declined.Count > 0) && await ConfirmPermanentDeleteAsync(declined))
         {
             foreach (FileTreeNodeViewModel node in declined)
@@ -619,6 +634,11 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
         // Remove rather than Contains: should the same path be selected twice, it is deleted once.
         return [.. entries.Where(node => outermost.Remove(node.FullPath))];
     }
+
+    private Task<bool> ConfirmMoveToTrashAsync(List<FileTreeNodeViewModel> targets)
+        => targets.Count == 1
+            ? _prompts.ConfirmMoveToTrashAsync(targets[0].Name, targets[0].IsDirectory)
+            : _prompts.ConfirmMoveToTrashAsync([.. targets.Select(node => node.Name)]);
 
     private Task<bool> ConfirmPermanentDeleteAsync(List<FileTreeNodeViewModel> declined)
         => declined.Count == 1
