@@ -60,7 +60,11 @@
          of an eye. Three looks — quiet for normal, green for insert, amber for either visual mode.
          The greens and ambers are the InfoBar's own success and warning pairs: not a success and not a
          warning, but the two accents the palette already carries, and the pair a status chip can be
-         told apart by at a glance. -->
+         told apart by at a glance.
+         The fill and the border carry the colour; the text is the primary foreground. That pairing is
+         the one Enigma.Avalonia.Desktop documents as WCAG AA on every severity fill, and the accent
+         on its own fill is not: from 1.2.0 the Dark fills are lighter, and green text on the green
+         fill fell to 3.1:1 at 10 px. VimModeChipPaletteTests holds the palette to that promise. -->
     <Style Selector="Border.vimMode">
       <Setter Property="Background" Value="{DynamicResource EnigmaHoverBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource EnigmaBorderSubtleBrush}" />
@@ -79,15 +83,12 @@
       <Setter Property="Background" Value="{DynamicResource EnigmaSuccessBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource EnigmaSuccessBorderBrush}" />
     </Style>
-    <Style Selector="Border.vimMode.insert > TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource EnigmaSuccessBrush}" />
-    </Style>
     <Style Selector="Border.vimMode.visual">
       <Setter Property="Background" Value="{DynamicResource EnigmaWarningBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource EnigmaWarningBorderBrush}" />
     </Style>
-    <Style Selector="Border.vimMode.visual > TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource EnigmaWarningBrush}" />
+    <Style Selector="Border.vimMode.insert > TextBlock, Border.vimMode.visual > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundBrush}" />
     </Style>
     <Style Selector="GridSplitter.pane">
       <Setter Property="Width" Value="4" />

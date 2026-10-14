@@ -1,6 +1,6 @@
 # FEATURE-1C17 — Enigma.Avalonia.Desktop 1.2.0
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-1c17-enigma-avalonia-1-2-0`, cut from the run branch at build time.
 **Run:** feature/2026-10-14-infobars-tree-multi-select
 
