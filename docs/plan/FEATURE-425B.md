@@ -1,6 +1,6 @@
 # FEATURE-425B — No success or info InfoBars
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
+**Status: DONE** · single phase · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** `feature/feature-425b-drop-info-infobars`, cut from the run branch at build time.
 **Run:** feature/2026-10-14-infobars-tree-multi-select
 

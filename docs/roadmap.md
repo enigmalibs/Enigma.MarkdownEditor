@@ -86,7 +86,7 @@
 | FEATURE-4BB7 | Linux installer & uninstaller      | DONE        | docs/plan/FEATURE-4BB7.md |
 | FEATURE-3D59 | Release 1.7.0                      | DONE        | docs/plan/FEATURE-3D59.md |
 | FEATURE-1C17 | Enigma.Avalonia.Desktop 1.2.0      | DONE        | docs/plan/FEATURE-1C17.md |
-| FEATURE-425B | No success or info InfoBars        | TODO        | docs/plan/FEATURE-425B.md |
+| FEATURE-425B | No success or info InfoBars        | DONE        | docs/plan/FEATURE-425B.md |
 | FEATURE-4B09 | File tree multi-selection          | TODO        | docs/plan/FEATURE-4B09.md |
 | - PHASE01    | Multi-selection in the tree        | TODO        | (in FEATURE-4B09.md)      |
 | - PHASE02    | Delete the whole selection         | TODO        | (in FEATURE-4B09.md)      |

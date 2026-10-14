@@ -43,7 +43,7 @@ namespace Enigma.MarkdownEditor.Desktop.ViewModels;
 /// <para>
 /// The file operations live here rather than in a service of their own because they are the tree's
 /// own context menu: they act on the selection, they need the folder to be read again afterwards, and
-/// they report through the same InfoBar. Every <em>decision</em> they take is in
+/// they report their failures through the same InfoBar. Every <em>decision</em> they take is in
 /// <c>Enigma.MarkdownEditor.Core.Files</c> — what a name may be, what a move means, what to do about a
 /// name that is taken — so what is left here is the glue: ask, plan, execute, re-read, report.
 /// </para>
@@ -538,19 +538,11 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
             await FileOperations.DeleteAsync(node.FullPath, cancellationToken);
         }
 
+        // Nothing is reported on success: the InfoBar is for what went wrong, and a delete that
+        // happened is announced by its row leaving the tree.
         if (parent is not null)
         {
             await ReloadDirectoryAsync(parent, cancellationToken);
-        }
-
-        if (trashed)
-        {
-            // Said out loud on purpose: the row simply vanishing looks the same whether the entry went
-            // somewhere recoverable or not, and which of the two it was is the thing worth knowing.
-            await ReportAsync(
-                $"'{node.Name}' was moved to the {TrashName}",
-                "It can be put back from there.",
-                InfoBarSeverity.Info);
         }
     }
 
@@ -618,8 +610,6 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
         SelectedNode = node.Children.FirstOrDefault(child =>
             WorkspaceValidation.PathComparer.Equals(child.FullPath, path));
     }
-
-    private static string TrashName => OperatingSystem.IsWindows() ? "recycle bin" : "trash";
 
     // The four operations are shown in one context menu and whether each applies is decided by the
     // same two things — what is selected, and what roots there are — so they are always re-asked
