@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -797,6 +798,376 @@ public sealed class FileTreeViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task SelectingOneNode_ReplacesWhateverWasSelected()
+    {
+        string workspace = SeedWorkspace("notes");
+        WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel a = Child(tree, "a.md");
+        FileTreeNodeViewModel b = Child(tree, "b.md");
+
+        tree.SelectedNodes.Add(a);
+        tree.SelectedNodes.Add(b);
+
+        // What a reveal, a refresh and a right-click outside the selection all mean by it.
+        tree.SelectedNode = b;
+        Assert.Equal([b], tree.SelectedNodes);
+
+        tree.SelectedNode = null;
+        Assert.Empty(tree.SelectedNodes);
+        Assert.Null(tree.SelectedNode);
+    }
+
+    [Fact]
+    public async Task ThePrimaryNode_IsTheFirstOneSelected()
+    {
+        string workspace = SeedWorkspace("notes");
+        WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel a = Child(tree, "a.md");
+        FileTreeNodeViewModel b = Child(tree, "b.md");
+
+        tree.SelectedNodes.Add(b);
+        tree.SelectedNodes.Add(a);
+
+        Assert.Same(b, tree.SelectedNode);
+    }
+
+    [Fact]
+    public async Task WithSeveralSelected_RenameAndColourStandDown()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        WriteFile(workspace, "a.md");
+
+        FakeFileOperationPrompts prompts = new() { NewName = "renamed" };
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+
+        tree.SelectedNodes.Add(Child(tree, "drafts"));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.False(tree.CanActOnSelection);
+        Assert.False(tree.RenameCommand.CanExecute(null));
+        Assert.False(tree.CanColorSelection);
+        Assert.False(tree.SetColorCommand.CanExecute(FolderColor.Red));
+
+        // Executed anyway: a disabled command is a courtesy, and the guard has to hold on its own.
+        await tree.RenameCommand.ExecuteAsync(null);
+        await tree.SetColorCommand.ExecuteAsync(FolderColor.Red);
+        await _dispatcher.DrainAsync();
+
+        Assert.Empty(prompts.AskedToRename);
+        Assert.Equal(FolderColor.None, FolderColorMap.ColorOf(_workspaces.ActiveWorkspace?.FolderColors, drafts));
+    }
+
+    [Fact]
+    public async Task WithSeveralSelected_DeleteSendsThemAllToTheTrash()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.True(tree.DeleteCommand.CanExecute(null));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        // In the order they were selected, silently, and with their rows — and the selection — gone.
+        Assert.Equal([c, a], _trash.Trashed);
+        Assert.Equal(["b.md"], tree.Roots[0].Children.Select(child => child.Name));
+        Assert.Equal(0, _prompts.PermanentDeletesAsked);
+        Assert.Empty(_infoBar.Shown);
+        Assert.Empty(tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task AFolderAndSomethingInsideIt_TheFolderIsDeletedOnce()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        WriteFile(drafts, "idea.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel folder = Child(tree, "drafts");
+        folder.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        // The file first: which one was clicked first must not decide what the trash is given.
+        tree.SelectedNodes.Add(Assert.Single(folder.Children));
+        tree.SelectedNodes.Add(folder);
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([drafts], _trash.Trashed);
+        Assert.False(Directory.Exists(drafts));
+        Assert.Empty(_infoBar.Shown);
+    }
+
+    [Fact]
+    public async Task WithNoTrash_OneConfirmationCoversTheWholeSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        FakeTrashService trash = new() { IsAvailable = false };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts, trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        IReadOnlyList<string> asked = Assert.Single(prompts.AskedToDeletePermanently);
+        Assert.Equal(["a.md", "b.md"], asked);
+        Assert.False(File.Exists(a));
+        Assert.False(File.Exists(b));
+        Assert.Equal(FileTreeNodeKind.Empty, Assert.Single(tree.Roots[0].Children).Kind);
+    }
+
+    [Fact]
+    public async Task WithNoTrash_RefusingTheConfirmation_KeepsEveryEntry()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+
+        FakeTrashService trash = new() { IsAvailable = false };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal(1, _prompts.PermanentDeletesAsked);
+        Assert.True(File.Exists(a));
+        Assert.True(File.Exists(b));
+        Assert.Equal(["a.md", "b.md"], tree.Roots[0].Children.Select(child => child.Name));
+    }
+
+    [Fact]
+    public async Task ATrashThatDeclinesOneEntry_AsksAboutThatOneAlone()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        FakeTrashService trash = new() { Declines = ["b.md"] };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts, trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a, c], trash.Trashed);
+        Assert.Equal(["b.md"], Assert.Single(prompts.AskedToDeletePermanently));
+        Assert.False(File.Exists(b));
+    }
+
+    [Fact]
+    public async Task AWorkspaceRootInTheSelection_RefusesTheWholeDelete()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+
+        FakeFileOperationPrompts prompts = new() { ConfirmsPermanentDelete = true };
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(tree.Roots[0]);
+
+        Assert.False(tree.DeleteCommand.CanExecute(null));
+
+        // Executed anyway: a disabled command is a courtesy, and the guard has to hold on its own.
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Empty(_trash.Trashed);
+        Assert.Equal(0, prompts.PermanentDeletesAsked);
+        Assert.True(File.Exists(a));
+        Assert.True(Directory.Exists(workspace));
+    }
+
+    [Fact]
+    public async Task AnInformationalRowInTheSelection_IsLeftOutOfTheDelete()
+    {
+        string workspace = SeedWorkspace("notes");
+        Directory.CreateDirectory(Path.Combine(workspace, "empty"));
+        string a = WriteFile(workspace, "a.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel empty = Child(tree, "empty");
+        empty.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        // What a Shift+click range across an open, empty folder picks up.
+        tree.SelectedNodes.Add(Assert.Single(empty.Children, child => child.IsInformational));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.True(tree.DeleteCommand.CanExecute(null));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a], _trash.Trashed);
+        Assert.Empty(_infoBar.Shown);
+    }
+
+    [Fact]
+    public async Task ATrashThatBreaksPartWay_StopsThereAndSaysSoOnce()
+    {
+        string workspace = SeedWorkspace("notes");
+        string a = WriteFile(workspace, "a.md");
+        string b = WriteFile(workspace, "b.md");
+        string c = WriteFile(workspace, "c.md");
+
+        FakeTrashService trash = new() { BreaksOn = ["b.md"] };
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync(trash: trash);
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+        tree.SelectedNodes.Add(Child(tree, "c.md"));
+
+        await tree.DeleteCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a], trash.Trashed);
+        Assert.True(File.Exists(b));
+        Assert.True(File.Exists(c));
+        Assert.Single(_infoBar.Shown);
+        Assert.Equal(0, _prompts.PermanentDeletesAsked);
+    }
+
+    [Fact]
+    public async Task WithSeveralSelected_ANewFileGoesNextToThePrimaryOne()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        WriteFile(workspace, "a.md");
+
+        FakeFileOperationPrompts prompts = new() { NewFileName = "new.md" };
+        using FileTreeViewModel tree = await CreateAndDrainAsync(prompts: prompts);
+
+        tree.SelectedNodes.Add(Child(tree, "drafts"));
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+
+        Assert.True(tree.NewFileCommand.CanExecute(null));
+
+        await tree.NewFileCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([drafts], prompts.AskedForNewFileIn);
+        Assert.True(File.Exists(Path.Combine(drafts, "new.md")));
+    }
+
+    [Fact]
+    public async Task ASelectedFileDeletedOutside_LeavesTheSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel b = Child(tree, "b.md");
+
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(b);
+
+        File.Delete(Path.Combine(workspace, "a.md"));
+        _watchers.For(workspace).Raise(workspace);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([b], tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task AFolderDeletedOutside_TakesWhatWasSelectedInsideItOutOfTheSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        WriteFile(drafts, "idea.md");
+        WriteFile(workspace, "a.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel folder = Child(tree, "drafts");
+        folder.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        FileTreeNodeViewModel a = Child(tree, "a.md");
+        tree.SelectedNodes.Add(Assert.Single(folder.Children));
+        tree.SelectedNodes.Add(a);
+
+        // Only the root is re-read: the folder's own row goes, and the selected row under it has to
+        // go with it although nothing re-read the folder it was in.
+        Directory.Delete(drafts, recursive: true);
+        _watchers.For(workspace).Raise(workspace);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal([a], tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task AFolderEmptiedOutside_TakesItsSelectedRowsOutOfTheSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        string drafts = Directory.CreateDirectory(Path.Combine(workspace, "drafts")).FullName;
+        string idea = WriteFile(drafts, "idea.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+        FileTreeNodeViewModel folder = Child(tree, "drafts");
+        folder.IsExpanded = true;
+        await _dispatcher.DrainAsync();
+
+        tree.SelectedNode = Assert.Single(folder.Children);
+
+        // The folder's rows are replaced by its "Nothing here" row rather than merged.
+        File.Delete(idea);
+        _watchers.For(workspace).Raise(drafts);
+        await _dispatcher.DrainAsync();
+
+        Assert.Equal(FileTreeNodeKind.Empty, Assert.Single(folder.Children).Kind);
+        Assert.Empty(tree.SelectedNodes);
+    }
+
+    [Fact]
+    public async Task Refreshing_ClearsTheSelection()
+    {
+        string workspace = SeedWorkspace("notes");
+        WriteFile(workspace, "a.md");
+        WriteFile(workspace, "b.md");
+
+        using FileTreeViewModel tree = await CreateAndDrainAsync();
+
+        tree.SelectedNodes.Add(Child(tree, "a.md"));
+        tree.SelectedNodes.Add(Child(tree, "b.md"));
+
+        await tree.RefreshCommand.ExecuteAsync(null);
+        await _dispatcher.DrainAsync();
+
+        Assert.Empty(tree.SelectedNodes);
+    }
+
+    [Fact]
     public async Task AWorkspaceRoot_IsNeitherRenamedNorDeleted()
     {
         string workspace = SeedWorkspace("notes");
@@ -842,8 +1213,9 @@ public sealed class FileTreeViewModelTests : IDisposable
         // is the one users learn to click through.
         Assert.Equal(0, _prompts.PermanentDeletesAsked);
 
-        // It does say where it went, though — a row vanishing looks the same either way.
-        Assert.Single(_infoBar.Shown);
+        // And no InfoBar either: that is for what went wrong, and the row leaving the tree is the
+        // whole report of a delete that happened.
+        Assert.Empty(_infoBar.Shown);
     }
 
     [Fact]
@@ -1127,6 +1499,10 @@ public sealed class FileTreeViewModelTests : IDisposable
 
         return path;
     }
+
+    // A row directly under the only root, by name.
+    private static FileTreeNodeViewModel Child(FileTreeViewModel tree, string name)
+        => tree.Roots[0].Children.Single(child => child.Name == name);
 
     private IConfig<AppSettings> LoadSettings() => SettingsLoader.Load(_settingsFile).Config;
 

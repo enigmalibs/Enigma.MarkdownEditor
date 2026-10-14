@@ -85,12 +85,15 @@ public partial class FileTreeView : UserControl
         e.Handled = true;
     }
 
-    // A right-click does not move the selection on its own, and the context menu acts on the
-    // selection — so without this, the menu would apply to whatever was selected before.
+    // The context menu acts on the selection, so the right-clicked row has to be part of it — without
+    // this, the menu would apply to whatever was selected before. A row already in the selection
+    // leaves it as it is, which is what lets a menu act on several rows at all; any other row becomes
+    // the selection on its own.
     private void OnNodeContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         if ((sender is Control { DataContext: FileTreeNodeViewModel node }) &&
-            (DataContext is FileTreeViewModel viewModel))
+            (DataContext is FileTreeViewModel viewModel) &&
+            !viewModel.SelectedNodes.Contains(node))
         {
             viewModel.SelectedNode = node;
         }

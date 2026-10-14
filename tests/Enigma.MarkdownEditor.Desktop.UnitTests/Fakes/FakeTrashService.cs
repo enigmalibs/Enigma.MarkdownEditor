@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Enigma.MarkdownEditor.Core.Files;
@@ -38,16 +39,35 @@ internal sealed class FakeTrashService : ITrashService
     /// </summary>
     public Exception? Failure { get; init; }
 
+    /// <summary>
+    /// File or folder names this trash declines although it takes everything else — one entry of a
+    /// selection on another device, typically.
+    /// </summary>
+    public IReadOnlyCollection<string> Declines { get; init; } = [];
+
+    /// <summary>
+    /// File or folder names this trash breaks on although it takes everything else: a failure in the
+    /// middle of a selection.
+    /// </summary>
+    public IReadOnlyCollection<string> BreaksOn { get; init; } = [];
+
     public IReadOnlyList<string> Trashed => _trashed;
 
     public Task<bool> MoveToTrashAsync(string path, CancellationToken cancellationToken = default)
     {
+        string name = Path.GetFileName(path);
+
         if (Failure is not null)
         {
             return Task.FromException<bool>(Failure);
         }
 
-        if (!IsAvailable || !Accepts)
+        if (BreaksOn.Contains(name))
+        {
+            return Task.FromException<bool>(new IOException($"the shell said no to '{name}'"));
+        }
+
+        if (!IsAvailable || !Accepts || Declines.Contains(name))
         {
             return Task.FromResult(false);
         }
