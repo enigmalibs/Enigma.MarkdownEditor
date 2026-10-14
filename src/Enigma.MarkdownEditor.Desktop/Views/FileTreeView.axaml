@@ -7,15 +7,19 @@
              x:Class="Enigma.MarkdownEditor.Desktop.Views.FileTreeView"
              x:DataType="vm:FileTreeViewModel">
 
+  <!-- Multiple: Ctrl+click adds or removes a row, Shift+click selects a range. The selection is bound
+       as a list and only as a list — the control works on the ViewModel's own collection in place,
+       and derives its SelectedItem from it, so there is one selection rather than two kept in step. -->
   <TreeView x:Name="Tree"
             ItemsSource="{Binding Roots}"
-            SelectedItem="{Binding SelectedNode}"
+            SelectionMode="Multiple"
+            SelectedItems="{Binding SelectedNodes}"
             KeyDown="OnKeyDown"
             DragDrop.AllowDrop="True"
             Padding="4,0,4,8">
 
     <!-- One menu on the tree rather than one per row: it reads the selection, and the row's own
-         ContextRequested handler is what makes sure the right-clicked row IS the selection. -->
+         ContextRequested handler is what makes sure the right-clicked row is part of it. -->
     <TreeView.ContextMenu>
       <ContextMenu x:DataType="vm:FileTreeViewModel">
         <MenuItem Header="New file…" Command="{Binding NewFileCommand}">
