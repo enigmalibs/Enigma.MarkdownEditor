@@ -1,6 +1,6 @@
 # FEATURE-4B09 — File tree multi-selection
 
-**Status: TODO** · 2 phases · Roadmap: `docs/roadmap.md`
+**Status: IN PROGRESS** · 2 phases · Roadmap: `docs/roadmap.md`
 **Type:** FEATURE · **Branch:** one per phase, cut from the run branch at build time.
 **Run:** feature/2026-10-14-infobars-tree-multi-select
 
@@ -55,7 +55,7 @@ Established by reading the code and the Avalonia 12.1.2 API, not assumed.
 
 ## PHASE01 — Multi-selection in the tree
 
-**Status: TODO** · Branch: `feature/feature-4b09-phase01-multi-selection`
+**Status: DONE** · Branch: `feature/feature-4b09-phase01-multi-selection`
 
 ### Steps
 

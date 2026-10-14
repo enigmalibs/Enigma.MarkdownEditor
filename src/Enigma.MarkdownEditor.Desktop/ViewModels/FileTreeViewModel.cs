@@ -125,6 +125,8 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
             color => RunAsync(token => SetColorAsync(color, token), "The colour could not be saved"),
             _ => ColorTarget is not null);
 
+        SelectedNodes.CollectionChanged += (_, _) => OnSelectionChanged();
+
         _workspaces.ActiveWorkspaceChanged += (_, _) => PostRefresh();
         _workspaces.WorkspacesChanged += (_, _) => PostRefresh();
 
@@ -144,20 +146,45 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     public ObservableCollection<FileTreeNodeViewModel> Roots { get; } = [];
 
     /// <summary>
-    /// Gets or sets the selected node, which is what the keyboard and the context menu act on.
+    /// Gets the selected nodes, in the order they were selected. The tree's own selection list.
     /// </summary>
+    /// <remarks>
+    /// The one source of truth for what is selected: the view binds the tree's <c>SelectedItems</c> to
+    /// this very collection, and the control adds and removes in place — so a Ctrl+click and a
+    /// Shift+click land here without a binding in the other direction to keep in step.
+    /// </remarks>
+    public ObservableCollection<FileTreeNodeViewModel> SelectedNodes { get; } = [];
+
+    /// <summary>
+    /// Gets or sets the primary selected node: the first of <see cref="SelectedNodes"/>.
+    /// </summary>
+    /// <remarks>
+    /// Setting it replaces the whole selection with that one node, and <see langword="null"/> clears
+    /// it — which is what every caller that selects one thing means: a reveal, a right-click outside
+    /// the selection, a refresh.
+    /// </remarks>
     public FileTreeNodeViewModel? SelectedNode
     {
-        get;
+        get => SelectedNodes.Count > 0 ? SelectedNodes[0] : null;
         set
         {
-            if (!SetProperty(ref field, value))
+            if (value is null)
+            {
+                if (SelectedNodes.Count > 0)
+                {
+                    SelectedNodes.Clear();
+                }
+
+                return;
+            }
+
+            if ((SelectedNodes.Count == 1) && ReferenceEquals(SelectedNodes[0], value))
             {
                 return;
             }
 
-            OnPropertyChanged(nameof(CanActOnSelection));
-            NotifyOperationsChanged();
+            SelectedNodes.Clear();
+            SelectedNodes.Add(value);
         }
     }
 
@@ -167,15 +194,22 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     public bool HasRoots => Roots.Count > 0;
 
     /// <summary>
-    /// Gets a value indicating whether the selection is something that can be renamed or deleted.
+    /// Gets a value indicating whether the selection is one entry that can be renamed or deleted.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// A workspace root is deliberately excluded. Renaming or deleting one from here would leave the
     /// workspaces file pointing at a folder that is no longer called that, or no longer there at all —
     /// the manage-workspaces dialog is where a root is added and removed, and it is the only place
     /// that keeps the two in step.
+    /// </para>
+    /// <para>
+    /// So is a selection of several: renaming several entries to one name has no meaning, and a
+    /// delete that took only one of them would be a surprise.
+    /// </para>
     /// </remarks>
-    public bool CanActOnSelection => SelectedNode is { IsRoot: false } node && (node.IsDirectory || node.IsFile);
+    public bool CanActOnSelection
+        => IsSingleSelection && SelectedNode is { IsRoot: false } node && (node.IsDirectory || node.IsFile);
 
     /// <summary>
     /// Gets or sets a value indicating whether the tree lists every file rather than markdown alone.
@@ -254,7 +288,8 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     /// A workspace root is included, unlike <see cref="CanActOnSelection"/>: a colour is written to
     /// the workspaces file rather than to the file system, so colouring a root cannot leave the two
     /// out of step. A root that is not on disk is excluded — it lists nothing that could inherit the
-    /// colour, so there is nothing for it to do.
+    /// colour, so there is nothing for it to do. So is a selection of several, which "colour this
+    /// folder" does not describe.
     /// </remarks>
     public bool CanColorSelection => ColorTarget is not null;
 
@@ -266,6 +301,7 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     /// An informational row answers with the folder it describes, so that "New file" works while the
     /// <em>Nothing here</em> row of an empty folder is selected, which is exactly when a user reaches
     /// for it. A root that is not on disk answers with nothing: there is no folder to create into.
+    /// With several entries selected, it is the primary one's folder that answers.
     /// </remarks>
     private string? TargetDirectory
     {
@@ -290,9 +326,11 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     // TargetDirectory there is no fallback to a lone root — "colour this folder" has to mean the
     // folder the user right-clicked, or it means whichever one the tree happens to hold.
     private string? ColorTarget
-        => (_workspaces.ActiveWorkspace is not null) && (SelectedNode is { IsDirectory: true } node)
+        => (_workspaces.ActiveWorkspace is not null) && IsSingleSelection && (SelectedNode is { IsDirectory: true } node)
             ? node.FullPath
             : null;
+
+    private bool IsSingleSelection => SelectedNodes.Count == 1;
 
     /// <summary>
     /// Rebuilds the whole tree from the open workspace, and rebuilds its watchers with it.
@@ -611,6 +649,32 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
             WorkspaceValidation.PathComparer.Equals(child.FullPath, path));
     }
 
+    private void OnSelectionChanged()
+    {
+        OnPropertyChanged(nameof(SelectedNode));
+        OnPropertyChanged(nameof(CanActOnSelection));
+        NotifyOperationsChanged();
+    }
+
+    // Takes a node that is leaving the tree out of the selection, and everything under it that was
+    // ever read: a selection must never hold a row the user can no longer see, or the next Delete
+    // would act on it. By identity, not by path — a path that flipped between file and directory is
+    // a new node, and the old one is what has to go.
+    private void Deselect(FileTreeNodeViewModel removed)
+    {
+        if (SelectedNodes.Count == 0)
+        {
+            return;
+        }
+
+        SelectedNodes.Remove(removed);
+
+        foreach (FileTreeNodeViewModel child in removed.Children)
+        {
+            Deselect(child);
+        }
+    }
+
     // The four operations are shown in one context menu and whether each applies is decided by the
     // same two things — what is selected, and what roots there are — so they are always re-asked
     // together rather than one at a time.
@@ -626,10 +690,11 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
 
     private async Task SetColorAsync(FolderColor? color, CancellationToken cancellationToken)
     {
-        // The same three conditions ColorTarget answers, spelled out because the workspace and the
-        // node are both needed here rather than just the path.
+        // The same conditions ColorTarget answers, spelled out because the workspace and the node are
+        // both needed here rather than just the path.
         if ((color is not { } chosen) ||
             (_workspaces.ActiveWorkspace is not { } workspace) ||
+            !IsSingleSelection ||
             (SelectedNode is not { IsDirectory: true } node))
         {
             return;
@@ -823,6 +888,11 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
     {
         if ((listing.Status != DirectoryListingStatus.Ok) || listing.IsEmpty)
         {
+            foreach (FileTreeNodeViewModel child in node.Children)
+            {
+                Deselect(child);
+            }
+
             node.Children.Clear();
             node.Children.Add(FileTreeNodeViewModel.For(node.FullPath, listing.Status));
 
@@ -859,6 +929,7 @@ public sealed class FileTreeViewModel : ObservableObject, IDisposable
         {
             if (!keep.Contains(node.Children[index]))
             {
+                Deselect(node.Children[index]);
                 node.Children.RemoveAt(index);
             }
         }
