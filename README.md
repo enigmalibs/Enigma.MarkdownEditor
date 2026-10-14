@@ -7,10 +7,10 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.7.0** — Linux gets the installer Enigma.GitClient uses: `install.sh` builds the
-> editor straight from a checkout or installs the one in the release tarball, adds an
-> `enigma-markdown-editor` command and a full set of icons, and ships with an `uninstall.sh`. In the
-> preview, code spans now sit on a chip of their own. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.8.0** — Select several entries in the file tree with `Ctrl`+click or
+> `Shift`+click and delete them together. Every delete now asks first, naming what it is about to
+> remove, and the InfoBar only ever opens when something went wrong. See
+> [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 
