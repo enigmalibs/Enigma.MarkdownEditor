@@ -113,6 +113,17 @@ On the release branch, before merging:
       says, is covered by tests through a fake dialog host; that the real dialog opens on the key and
       the menu, takes focus, and closes on `Escape` is not, because nothing in the suite builds
       `MainWindow`. This is what `FEATURE-47F5` left open.
+- [ ] **The icon reads in the Windows shell, against a dark and a light taskbar.** Run the Release
+      build and check the window's title bar and its taskbar button, then `Alt`+`Tab`. Check the
+      `.exe` in Explorer at the *Small*, *Medium* and *Extra large* views (these use the 16, 48 and
+      256 px frames). Repeat with Windows switched to the other app/taskbar theme. The mark is a
+      dark square, so on a dark taskbar its rounded edge and the outlined box must still stand out.
+      The splash and the About dialog show the same mark, from `Assets/app-256.png`. Windows caches
+      icons per path, so an `.exe` that still shows the previous icon after a rebuild is the cache
+      (`ie4uinit.exe -show` refreshes it), not the build. `AppIconTests` checks the `.ico`'s frame
+      set and the PNG's size, but the headless suite renders without Skia, so no test can say how the
+      icon looks. This is what `FEATURE-EA38` left open; §2's desktop-menu item covers the Linux
+      launcher.
 - [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
       rule.
 
