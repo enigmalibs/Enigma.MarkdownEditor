@@ -1,7 +1,7 @@
 # FEATURE-EA38 — New application icon
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** `feature/feature-ea38-new-app-icon`, cut from the run branch at build time.
+**Status:** DONE
+**Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md` · **Branch:** `feature/feature-ea38-new-app-icon`, cut from the run branch at build time.
 **Run:** feature/2026-10-28-new-icon-release
 
 ## Objective
