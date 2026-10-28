@@ -1,3 +1,52 @@
+# Enigma Markdown Editor v1.9.0 Release Notes
+
+A minor release about how the editor looks before you open it: it has a new icon. It shows
+everywhere the application does: on the window and its taskbar button, the executable, the Windows
+shortcuts and *Apps & features*, the splash screen, the About dialog and the Linux launcher. Nothing
+else about the editor changed. Your settings, workspaces and sessions are untouched, and none of
+them needs a migration.
+
+## Changes
+
+- **A new application icon.** The solid blue square with a white `M↓` is replaced by a dark rounded
+  square holding an outlined `M↓` box, with a blue `M` and a green arrow.
+  - **On Windows**, the icon now carries ten sizes from 16 to 256 pixels instead of four, so the
+    shell scales none of them at the usual display settings, 125 % and 150 % included. The file
+    itself shrinks from 279 KB to 17 KB.
+  - **On Linux**, the installer puts the new artwork in the same six launcher sizes as before.
+  - **If the old icon persists after an upgrade**, that is the desktop's icon cache, not the
+    installation. On Windows, `ie4uinit.exe -show` refreshes it; on Linux, logging out and back in
+    does.
+
+## Dependencies
+
+- **`Markdig` moves from 1.4.0 to 1.5.1**, the markdown parser behind the preview and its plain-text
+  and rich-text copy.
+- **`Microsoft.Extensions.Hosting` moves from 10.0.13 to 10.0.14**, a patch bump in the .NET 10
+  band.
+- **Deliberately held back:**
+  - the version-coupled Avalonia set (`Avalonia`, `.Desktop`, `.Themes.Fluent`, `.Fonts.Inter` and
+    the two headless test packages) stays at 12.1.2, although 12.1.4 is out;
+  - `Enigma.Avalonia.Desktop` stays at 1.2.0, although 1.3.0 is out. It belongs to that same set.
+
+  A coupled set moves as a set, on its own. `xunit.v3` also stays at 3.2.2, although 4.0.2 is out:
+  a major test-framework bump is its own piece of work, and the Avalonia headless test harness at
+  12.1.2 is built against 3.2.2.
+
+## Compatibility
+
+- **Unchanged from 1.8.0 where it matters.** Still **.NET 10** and **Avalonia 12.1.2**, still
+  **Windows x64** and **Linux x64**, both shipped **self-contained**. The Windows MSI and the Linux
+  tarball keep their layout. The icon files keep their names and paths; only their content is new.
+- **Your data is read as it was left.** `settings.json`, `workspaces.json` and a stored session
+  gain nothing and lose nothing. There is nothing to migrate, in either direction between 1.8.0
+  and 1.9.0.
+
+## Version
+
+- **1.9.0**: a SemVer MINOR release. The application's icon changed visibly, and nothing you depend
+  on changed incompatibly.
+
 # Enigma Markdown Editor v1.8.0 Release Notes
 
 A minor release about the file tree. You can now select several entries at once and delete them

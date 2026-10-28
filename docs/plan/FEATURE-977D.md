@@ -1,7 +1,7 @@
 # FEATURE-977D — Release 1.9.0
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** `feature/feature-977d-release-1-9-0`, cut from the run branch at build time.
+**Status:** DONE
+**Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md` · **Branch:** `feature/feature-977d-release-1-9-0`, cut from the run branch at build time.
 **Run:** feature/2026-10-28-new-icon-release
 
 ## Objective

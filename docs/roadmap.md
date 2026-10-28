@@ -93,7 +93,7 @@
 | FEATURE-47F5 | Confirm every file tree delete     | DONE      | docs/plan/FEATURE-47F5.md |
 | FEATURE-23F7 | Release 1.8.0                      | DONE      | docs/plan/FEATURE-23F7.md |
 | FEATURE-EA38 | New application icon               | DONE      | docs/plan/FEATURE-EA38.md |
-| FEATURE-977D | Release 1.9.0                      | TODO      | docs/plan/FEATURE-977D.md |
+| FEATURE-977D | Release 1.9.0                      | DONE      | docs/plan/FEATURE-977D.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,
