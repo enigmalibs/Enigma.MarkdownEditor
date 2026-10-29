@@ -97,7 +97,7 @@
 | FEATURE-3185 | Remove the splash screen              | DONE      | docs/plan/FEATURE-3185.md |
 | FEATURE-982C | Uniform About dialog                  | DONE      | docs/plan/FEATURE-982C.md |
 | FEATURE-7CE4 | App icon in the output directory      | DONE      | docs/plan/FEATURE-7CE4.md |
-| FEATURE-2877 | Update NuGet packages                 | TODO      | docs/plan/FEATURE-2877.md |
+| FEATURE-2877 | Update NuGet packages                 | DONE      | docs/plan/FEATURE-2877.md |
 | FEATURE-E31C | Catch all unhandled exceptions        | TODO      | docs/plan/FEATURE-E31C.md |
 | - PHASE01    | Early hooks & uniform error dialog    | TODO      | (in FEATURE-E31C.md)      |
 | - PHASE02    | Start-up failure dialog               | TODO      | (in FEATURE-E31C.md)      |
