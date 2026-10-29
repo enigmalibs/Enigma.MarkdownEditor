@@ -221,7 +221,9 @@ git push origin X.Y.Z
 
 Both start from a publish. The publish output is what actually ships — the MSI harvests it and the
 tarball wraps it — so a stale `artifacts/publish/` silently packages the previous version. The
-scripts clean it for you unless you pass `-NoClean`.
+scripts clean it for you unless you pass `-NoClean`. (`packaging/windows/publish.*` and
+`packaging/linux/publish.sh` are not these: they publish a framework-dependent ReadyToRun build into
+`bin/` for local use, and nothing here reads their output.)
 
 ```bash
 ./build/publish.ps1 -Rid win-x64      # -> artifacts/publish/win-x64

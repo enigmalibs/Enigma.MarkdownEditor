@@ -1,7 +1,7 @@
 # FEATURE-F36D — Publish scripts for Windows and Linux
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** `feature/feature-f36d-publish-scripts`, cut from the run branch at build time.
+**Status:** DONE
+**Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md` · **Branch:** `feature/feature-f36d-publish-scripts`, cut from the run branch at build time.
 **Run:** feature/2026-10-29-uniform-enigma-apps
 
 ## Objective
