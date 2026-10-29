@@ -75,6 +75,18 @@ public sealed class AppIconTests
         Assert.Equal(256, BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20)));
     }
 
+    [AvaloniaFact]
+    public void TheIcon_IsAlsoAFileBesideTheExecutable()
+    {
+        // Copied to the output root as a plain file so shortcuts and launchers can point at it; the
+        // copy flows into this project's output through the project reference, as it flows into a
+        // publish. Byte for byte, or a stale copy would outlive the next artwork change.
+        string path = Path.Combine(AppContext.BaseDirectory, "app.ico");
+
+        Assert.True(File.Exists(path), $"{path} is missing.");
+        Assert.Equal(Read("app.ico"), File.ReadAllBytes(path));
+    }
+
     private static byte[] Read(string asset)
     {
         using Stream stream = AssetLoader.Open(new Uri($"avares://Enigma.MarkdownEditor.Desktop/Assets/{asset}"));
