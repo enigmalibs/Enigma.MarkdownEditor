@@ -28,6 +28,7 @@ public sealed class CrashReporterTests
 
     [AvaloniaTheory]
     [InlineData(UnhandledErrorSource.AppDomain, LogLevel.Critical)]
+    [InlineData(UnhandledErrorSource.Startup, LogLevel.Critical)]
     [InlineData(UnhandledErrorSource.UnobservedTask, LogLevel.Error)]
     [InlineData(UnhandledErrorSource.Dispatcher, LogLevel.Error)]
     public void EveryReport_IsLoggedAndFlushed(UnhandledErrorSource source, LogLevel level)
@@ -43,14 +44,17 @@ public sealed class CrashReporterTests
         Assert.Equal(1, harness.Handle.Flushes);
     }
 
-    [AvaloniaFact]
-    public void AnAppDomainReport_ShowsNoDialog()
+    [AvaloniaTheory]
+    [InlineData(UnhandledErrorSource.AppDomain)]
+    [InlineData(UnhandledErrorSource.Startup)]
+    public void AReportTheProcessDoesNotSurvive_ShowsNoDialogOnTheHost(UnhandledErrorSource source)
     {
-        // The process is already going down.
+        // AppDomain: the process is already going down. Startup: the start-up error window shows it,
+        // because the main window and its host never came.
         Harness harness = new();
         harness.Reporter.AttachHost(new ContentDialog());
 
-        harness.Reporter.Report(new InvalidOperationException("boom"), UnhandledErrorSource.AppDomain);
+        harness.Reporter.Report(new InvalidOperationException("boom"), source);
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(0, harness.Dialogs.Attempts);

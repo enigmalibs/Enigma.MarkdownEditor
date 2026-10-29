@@ -36,6 +36,21 @@ public sealed class UnhandledExceptionRouter
     private ICrashReporter? _reporter;
 
     /// <summary>
+    /// Gets a value indicating whether a reporter is attached — that is, whether a report made now
+    /// reaches the log.
+    /// </summary>
+    public bool IsAttached
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _reporter is not null;
+            }
+        }
+    }
+
+    /// <summary>
     /// Hands over to the reporter: what was reported before it existed first, then everything from
     /// here on.
     /// </summary>

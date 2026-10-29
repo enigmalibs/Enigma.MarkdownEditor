@@ -1,6 +1,6 @@
 # FEATURE-E31C — Catch all unhandled exceptions
 
-**Status:** IN PROGRESS
+**Status:** DONE
 **Type:** FEATURE · 2 phases · Roadmap: `docs/roadmap.md` · **Branch:** one per phase, cut from the run branch at build time.
 **Run:** feature/2026-10-29-uniform-enigma-apps
 
@@ -112,7 +112,7 @@ dialog.
 
 ## PHASE02 — Start-up failure dialog
 
-**Status:** TODO
+**Status:** DONE
 **Branch:** `feature/feature-e31c-phase02-startup-failure-dialog`
 
 ### Steps

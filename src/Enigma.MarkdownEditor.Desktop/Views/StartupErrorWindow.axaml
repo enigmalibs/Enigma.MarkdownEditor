@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:contentDialog="using:Enigma.Avalonia.Desktop.Controls.ContentDialog"
+        x:Class="Enigma.MarkdownEditor.Desktop.Views.StartupErrorWindow"
+        Icon="/Assets/app.ico"
+        Width="640" Height="420"
+        MinWidth="480" MinHeight="320"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource EnigmaBackgroundBrush}">
+
+  <!-- What a failed start-up opens instead of the main window: nothing but a dialog host, which shows
+       the same error dialog the main window would. The bounds are the main window's host's, so a
+       long message is held to the same card. -->
+  <Panel>
+    <contentDialog:ContentDialog x:Name="HostDialog"
+                                 DialogMinWidth="360"
+                                 DialogMaxWidth="860"
+                                 DialogMaxHeight="640" />
+  </Panel>
+</Window>
