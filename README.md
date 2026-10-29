@@ -443,6 +443,18 @@ Tests are xUnit v3 on the [Microsoft Testing Platform](https://learn.microsoft.c
 MTP rejects a bare solution path, so the `--solution` flag above is required — plain `dotnet test`
 still works from inside a test project's directory.
 
+To publish a local build — Release, ReadyToRun, on an installed .NET 10 runtime — run the script for
+your platform from anywhere:
+
+```
+packaging\windows\publish.bat         # or publish.ps1 -> src/Enigma.MarkdownEditor.Desktop/bin/Release/net10.0/win-x64/publish
+./packaging/linux/publish.sh          #                -> src/Enigma.MarkdownEditor.Desktop/bin/Release/net10.0/linux-x64/publish
+```
+
+Each runs `dotnet publish <Desktop project> -c Release -r <rid> -p:PublishReadyToRun=true`
+and nothing else. `publish.ps1` needs `-ExecutionPolicy Bypass` under Windows PowerShell's default
+policy; `publish.bat` does not.
+
 To produce the release artifacts:
 
 ```
@@ -485,9 +497,10 @@ src/
 tests/
   Enigma.MarkdownEditor.Core.UnitTests
   Enigma.MarkdownEditor.Desktop.UnitTests
-build/                              publish scripts
-packaging/linux/                    install.sh / uninstall.sh, desktop-entry template, icons,
-                                    tarball packer
+build/                              release publish scripts (self-contained, artifacts/)
+packaging/windows/                  publish.ps1 / publish.bat (local win-x64 publish)
+packaging/linux/                    install.sh / uninstall.sh / publish.sh, desktop-entry template,
+                                    icons, tarball packer
 msiProfiles/                        one committed .msipkg.json per released version
 docs/
   RELEASE.md                        the release runbook
