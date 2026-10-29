@@ -118,8 +118,9 @@ are passed over quietly, and a session file that cannot be read costs you a sess
 - The very first start asks three questions, once: vim keys on or off, the theme, and the folder your
   notes live in. *Skip* is an answer too, and either way it never asks again — everything it asks is
   in settings afterwards.
-- An About dialog, behind the info button in the toolbar — the icon, the version, the commit the
-  build was cut from, the copyright and the licence of every dependency. `Escape` closes it.
+- An About dialog, behind the info button in the toolbar — the icon, the name, the version, the
+  commit the build was cut from and the copyright, laid out as in every Enigma app. `Escape` closes
+  it.
 
 ## Vim key reference
 

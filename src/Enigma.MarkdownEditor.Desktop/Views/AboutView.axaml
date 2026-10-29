@@ -5,11 +5,15 @@
              x:DataType="vm:AboutViewModel"
              Width="380">
 
+  <!-- The About view every Enigma app shares: Enigma.GitClient's is the reference, and this one keeps
+       its layout, sizes and brushes element for element. -->
+
   <UserControl.Styles>
     <Style Selector="TextBlock.productName">
       <Setter Property="FontSize" Value="18" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundBrush}" />
     </Style>
     <Style Selector="TextBlock.version">
       <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
@@ -24,16 +28,6 @@
       <Setter Property="FontSize" Value="11" />
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
-    </Style>
-    <!-- The same caption style the manage-workspaces dialog uses over a list. -->
-    <Style Selector="TextBlock.caption">
-      <Setter Property="FontSize" Value="11" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundSecondaryBrush}" />
-    </Style>
-    <Style Selector="TextBlock.license">
-      <Setter Property="FontSize" Value="11" />
-      <Setter Property="Foreground" Value="{DynamicResource EnigmaForegroundTertiaryBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -61,8 +55,8 @@
                   HorizontalAlignment="Center"
                   IsVisible="{Binding HasBuildSha}">
         <TextBlock Classes="build" Text="Build" />
-        <!-- Selectable so it can be copied straight into a bug report; the label beside it is not,
-             so what lands in the clipboard is the revision alone. -->
+        <!-- Selectable so it can be copied straight into a bug report; the label beside it is not, so
+             what lands in the clipboard is the revision alone. -->
         <SelectableTextBlock x:Name="BuildSha" Classes="build" Text="{Binding BuildSha}" />
       </StackPanel>
     </StackPanel>
@@ -72,32 +66,6 @@
                TextWrapping="Wrap"
                IsVisible="{Binding HasCopyright}"
                Text="{Binding Copyright}" />
-
-    <Border Background="{DynamicResource EnigmaSurfaceBrush}"
-            BorderBrush="{DynamicResource EnigmaBorderSubtleBrush}"
-            BorderThickness="1"
-            CornerRadius="4"
-            Padding="12,10">
-      <StackPanel Spacing="8">
-        <TextBlock Classes="caption" Text="BUILT WITH" />
-        <ItemsControl x:Name="Credits" ItemsSource="{Binding Credits}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:CreditEntry">
-              <Grid ColumnDefinitions="*,Auto" Margin="0,1">
-                <TextBlock Grid.Column="0"
-                           Text="{Binding Name}"
-                           TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="1"
-                           Classes="license"
-                           Margin="12,0,0,0"
-                           VerticalAlignment="Center"
-                           Text="{Binding License}" />
-              </Grid>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
-    </Border>
 
   </StackPanel>
 </UserControl>

@@ -154,9 +154,10 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
       install; a terminal launch proves neither.)
 - [ ] **Launch** — the window opens, at a sane size, with all three panes.
 - [ ] **About** — the info button in the toolbar opens the dialog, **with the application icon drawn
-      in it**, plus the version, the build line and the credits. The icon is the point: it is a PNG
-      resource decoded by Skia, and a bitmap that fails to decode draws nothing and logs nothing, so
-      this is the only place a broken `Assets/app-256.png` on Linux would show. `Escape` closes it.
+      in it**, plus the name, the version, the build line and the copyright. The icon is the point:
+      it is a PNG resource decoded by Skia, and a bitmap that fails to decode draws nothing and logs
+      nothing, so this is the only place a broken `Assets/app-256.png` on Linux would show. `Escape`
+      closes it.
 - [ ] **Workspace** — add a folder, and the tree lists it. Filter the tree. Change a file outside the
       editor and the tree notices.
 - [ ] **Tree operations** — create, rename and move a note. **Delete one, answer the confirmation

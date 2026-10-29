@@ -4,7 +4,7 @@ namespace Enigma.MarkdownEditor.Desktop.Views;
 
 /// <summary>
 /// The content of the About dialog: the application's icon, what it is, which build is running, and
-/// what it is built out of.
+/// its copyright.
 /// </summary>
 /// <remarks>
 /// Deliberately logic-free, like <see cref="WorkspaceManagerView"/>. There is nothing to do here —
