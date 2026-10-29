@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Enigma.MarkdownEditor.Core;
 
 namespace Enigma.MarkdownEditor.Desktop.ViewModels;
 
 /// <summary>
-/// What the About dialog says: which product this is, which build of it is running, and what it is
-/// built out of.
+/// What the About dialog says: which product this is, and which build of it is running.
 /// </summary>
 /// <remarks>
 /// Read-only, and every property is get-only: nothing here changes while the dialog is open. It
@@ -17,38 +15,10 @@ namespace Enigma.MarkdownEditor.Desktop.ViewModels;
 public sealed class AboutViewModel : ObservableObject
 {
     /// <summary>
-    /// What the application redistributes, and under what terms.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Every entry was read from the package it names — the <c>&lt;license&gt;</c> element of its
-    /// <c>.nuspec</c>, or the licence file the package ships — rather than recalled. This is the
-    /// attribution the MIT, BSD and OFL terms all ask for, and the list is the whole of it.
-    /// </para>
-    /// <para>
-    /// One row per thing a reader would recognise, not one per assembly: the four Enigma libraries
-    /// share a row because they share an author and a licence, and TextMateSharp covers the grammars
-    /// package it brings with it.
-    /// </para>
-    /// </remarks>
-    public static readonly IReadOnlyList<CreditEntry> DefaultCredits =
-    [
-        new CreditEntry("Avalonia", "MIT"),
-        new CreditEntry("AvaloniaEdit", "MIT"),
-        new CreditEntry("TextMateSharp", "MIT"),
-        new CreditEntry("Markdig", "BSD-2-Clause"),
-        new CreditEntry("NLog", "BSD-3-Clause"),
-        new CreditEntry("CommunityToolkit.Mvvm", "MIT"),
-        new CreditEntry("Enigma libraries", "MIT"),
-        new CreditEntry("Phosphor Icons", "MIT"),
-        new CreditEntry("Inter", "SIL Open Font License 1.1"),
-    ];
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="AboutViewModel"/> class over the running build.
     /// </summary>
     public AboutViewModel()
-        : this(AppInfo.Version, AppInfo.BuildSha, AppInfo.Copyright, DefaultCredits)
+        : this(AppInfo.Version, AppInfo.BuildSha, AppInfo.Copyright)
     {
     }
 
@@ -58,23 +28,20 @@ public sealed class AboutViewModel : ObservableObject
     /// <param name="version">The version to show.</param>
     /// <param name="buildSha">The short revision to show, or <see langword="null"/> to show no build line.</param>
     /// <param name="copyright">The copyright notice, or an empty string to show no copyright line.</param>
-    /// <param name="credits">The attribution list.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="version"/>, <paramref name="copyright"/> or <paramref name="credits"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="version"/> or <paramref name="copyright"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// The values are arguments rather than read from <see cref="AppInfo"/> here, because
     /// <see cref="AppInfo"/> reports the assembly the test host is running and a test cannot vary it.
     /// This is the seam that lets the missing-revision case be asserted at all.
     /// </remarks>
-    public AboutViewModel(string version, string? buildSha, string copyright, IReadOnlyList<CreditEntry> credits)
+    public AboutViewModel(string version, string? buildSha, string copyright)
     {
         ArgumentNullException.ThrowIfNull(version);
         ArgumentNullException.ThrowIfNull(copyright);
-        ArgumentNullException.ThrowIfNull(credits);
 
         Version = version;
         BuildSha = buildSha;
         Copyright = copyright;
-        Credits = credits;
     }
 
     /// <summary>
@@ -110,9 +77,4 @@ public sealed class AboutViewModel : ObservableObject
     /// Gets a value indicating whether there is a copyright notice to show.
     /// </summary>
     public bool HasCopyright => Copyright.Length > 0;
-
-    /// <summary>
-    /// Gets what this application is built out of, and under what licence.
-    /// </summary>
-    public IReadOnlyList<CreditEntry> Credits { get; }
 }
