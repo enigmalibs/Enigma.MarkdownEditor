@@ -54,5 +54,9 @@
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
+    <!-- Also beside the executable, as a plain file, so shortcuts, launchers and installers can point
+         at the icon instead of extracting it from the .exe. Update, not Include: the SDK's default
+         None glob already lists it. -->
+    <None Update="Assets/app.ico" CopyToOutputDirectory="PreserveNewest" TargetPath="app.ico" />
   </ItemGroup>
 </Project>
