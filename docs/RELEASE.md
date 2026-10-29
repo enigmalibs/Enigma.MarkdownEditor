@@ -118,7 +118,7 @@ On the release branch, before merging:
       `.exe` in Explorer at the *Small*, *Medium* and *Extra large* views (these use the 16, 48 and
       256 px frames). Repeat with Windows switched to the other app/taskbar theme. The mark is a
       dark square, so on a dark taskbar its rounded edge and the outlined box must still stand out.
-      The splash and the About dialog show the same mark, from `Assets/app-256.png`. Windows caches
+      The About dialog shows the same mark, from `Assets/app-256.png`. Windows caches
       icons per path, so an `.exe` that still shows the previous icon after a rebuild is the cache
       (`ie4uinit.exe -show` refreshes it), not the build. `AppIconTests` checks the `.ico`'s frame
       set and the PNG's size, but the headless suite renders without Skia, so no test can say how the
@@ -152,11 +152,6 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
 - [ ] The application appears in the desktop menu, with its icon, and launches from there — not only
       from the terminal. (This is what proves the `.desktop` `Exec` substitution and the icon
       install; a terminal launch proves neither.)
-- [ ] **Splash** — a splash screen appears centred, **painted** (the icon, the name and the version
-      — not a blank rectangle), for about a second, and the main window replaces it. It must not
-      appear in the task switcher, and it must not still be on screen once the editor is up. This is
-      the check Linux earns on its own: the window is undecorated, topmost and owned by a hidden
-      parking window, and each of those three is compositor-dependent.
 - [ ] **Launch** — the window opens, at a sane size, with all three panes.
 - [ ] **About** — the info button in the toolbar opens the dialog, **with the application icon drawn
       in it**, plus the version, the build line and the credits. The icon is the point: it is a PNG
@@ -307,7 +302,5 @@ part of what is checked.
 - [ ] The tag exists on `main` and the release notes match `RELEASENOTES.md`.
 - [ ] A fresh install writes its per-user folder — `%APPDATA%\Enigma.MarkdownEditor` or
       `~/.config/Enigma.MarkdownEditor` — and starts as a first run, without inheriting the build
-      machine's session. **Watch the splash on this start in particular**: a first run has no session
-      to restore, so it composes fast enough to be held on screen for its one-second minimum rather
-      than closing as soon as it is ready. The splash must still be replaced by the main window, and
-      the application must still be running afterwards.
+      machine's session. The main window must be the first thing on screen,
+      and the application must still be running afterwards.

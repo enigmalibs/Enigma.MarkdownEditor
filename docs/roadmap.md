@@ -94,7 +94,7 @@
 | FEATURE-23F7 | Release 1.8.0                         | DONE      | docs/plan/FEATURE-23F7.md |
 | FEATURE-EA38 | New application icon                  | DONE      | docs/plan/FEATURE-EA38.md |
 | FEATURE-977D | Release 1.9.0                         | DONE      | docs/plan/FEATURE-977D.md |
-| FEATURE-3185 | Remove the splash screen              | TODO      | docs/plan/FEATURE-3185.md |
+| FEATURE-3185 | Remove the splash screen              | DONE      | docs/plan/FEATURE-3185.md |
 | FEATURE-982C | Uniform About dialog                  | TODO      | docs/plan/FEATURE-982C.md |
 | FEATURE-7CE4 | App icon in the output directory      | TODO      | docs/plan/FEATURE-7CE4.md |
 | FEATURE-2877 | Update NuGet packages                 | TODO      | docs/plan/FEATURE-2877.md |
