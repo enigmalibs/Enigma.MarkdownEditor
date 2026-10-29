@@ -7,8 +7,9 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.9.0** — A new application icon, on the window, the taskbar, the shortcuts, the
-> splash screen, the About dialog and the Linux launcher. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.10.0** — Starts straight into its window with no splash screen, shows every
+> unhandled error (a failed start-up included) in a dialog, and has the About dialog of every Enigma
+> app. See [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 
@@ -115,14 +116,12 @@ are passed over quietly, and a session file that cannot be read costs you a sess
 
 **Start-up**
 
-- A splash screen while it loads — the icon, the name and the version, centred, replaced by the main
-  window as soon as that window is ready and never on screen for less than a second. It stays out of
-  the task switcher, so it leaves nothing behind.
 - The very first start asks three questions, once: vim keys on or off, the theme, and the folder your
   notes live in. *Skip* is an answer too, and either way it never asks again — everything it asks is
   in settings afterwards.
-- An About dialog, behind the info button in the toolbar — the icon, the version, the commit the
-  build was cut from, the copyright and the licence of every dependency. `Escape` closes it.
+- An About dialog, behind the info button in the toolbar — the icon, the name, the version, the
+  commit the build was cut from and the copyright, laid out as in every Enigma app. `Escape` closes
+  it.
 
 ## Vim key reference
 
@@ -445,6 +444,18 @@ Tests are xUnit v3 on the [Microsoft Testing Platform](https://learn.microsoft.c
 MTP rejects a bare solution path, so the `--solution` flag above is required — plain `dotnet test`
 still works from inside a test project's directory.
 
+To publish a local build — Release, ReadyToRun, on an installed .NET 10 runtime — run the script for
+your platform from anywhere:
+
+```
+packaging\windows\publish.bat         # or publish.ps1 -> src/Enigma.MarkdownEditor.Desktop/bin/Release/net10.0/win-x64/publish
+./packaging/linux/publish.sh          #                -> src/Enigma.MarkdownEditor.Desktop/bin/Release/net10.0/linux-x64/publish
+```
+
+Each runs `dotnet publish <Desktop project> -c Release -r <rid> -p:PublishReadyToRun=true`
+and nothing else. `publish.ps1` needs `-ExecutionPolicy Bypass` under Windows PowerShell's default
+policy; `publish.bat` does not.
+
 To produce the release artifacts:
 
 ```
@@ -487,9 +498,10 @@ src/
 tests/
   Enigma.MarkdownEditor.Core.UnitTests
   Enigma.MarkdownEditor.Desktop.UnitTests
-build/                              publish scripts
-packaging/linux/                    install.sh / uninstall.sh, desktop-entry template, icons,
-                                    tarball packer
+build/                              release publish scripts (self-contained, artifacts/)
+packaging/windows/                  publish.ps1 / publish.bat (local win-x64 publish)
+packaging/linux/                    install.sh / uninstall.sh / publish.sh, desktop-entry template,
+                                    icons, tarball packer
 msiProfiles/                        one committed .msipkg.json per released version
 docs/
   RELEASE.md                        the release runbook

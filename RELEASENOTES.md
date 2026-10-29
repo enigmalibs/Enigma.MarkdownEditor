@@ -1,3 +1,81 @@
+# Enigma Markdown Editor v1.10.0 Release Notes
+
+A minor release that brings the editor in line with the rest of the Enigma family. It starts straight
+into its window, with no splash screen. Its About dialog looks like every other Enigma app's. And an
+error nothing else handled now always ends in a dialog, including one that stops it from starting at
+all. Nothing in your settings, workspaces or sessions changed shape, and none of them needs a
+migration.
+
+## New Features
+
+- **Every unhandled error ends in a dialog.**
+  - **The look** is the family's: an amber warning sign, *Something went wrong*, what happened, the
+    path of the log file that holds the details, and a single *Close*. The editor keeps running
+    behind it. The text can be selected, so it can be copied into a bug report.
+  - **Errors from the very start are caught too.** The safety net is in place from the first line
+    of the program, where it used to arrive only once the services were built. An error caught
+    before the log exists is kept, and is written to the log and shown once the log is there.
+  - **One dialog at a time.** A fault that repeats does not stack up dialogs; the repeats go to the
+    log.
+  - **An error on a background thread** that ends the process is written to the log before the
+    process goes. There is no time to show a dialog for it.
+- **A start-up that fails says so.** If the editor cannot start, it opens a small window carrying the
+  same error dialog, and closing it ends the application. Before, the process simply ended with
+  nothing on screen. The dialog names the log file when the failure got that far, and says so when it
+  did not.
+- **The icon is a file beside the executable.** Every build, every publish and so every installation
+  now carries `app.ico` next to `Enigma.MarkdownEditor.Desktop(.exe)`. Shortcuts and launchers can
+  point at it directly.
+- **One-command publish scripts, for building it yourself.**
+  - `packaging\windows\publish.ps1` and `packaging\windows\publish.bat` publish a Release
+    ReadyToRun build for Windows x64.
+  - `packaging/linux/publish.sh` does the same for Linux x64.
+  - All three run from any directory and pass `dotnet`'s exit code on. The release artifacts still
+    come from `build/publish.ps1`.
+
+## Changes
+
+- **No splash screen.** The main window is the first thing on screen, as soon as it is ready, with no
+  one-second floor.
+- **The About dialog looks like every Enigma app's.** The same layout, sizes and colours as Enigma
+  Git Client's: the icon, the name, the version, the build line and the copyright, with a single
+  *Close* that is the default. The dialog has no title bar or icon column of its own any more.
+- **The About dialog no longer lists the components and their licences.** The family's About dialog
+  has no such list. The components and the terms they ship under are unchanged; see
+  `Directory.Packages.props` for the list.
+
+## Fixes
+
+- **An error no longer takes over an open dialog.** An error reported while Settings, *Manage
+  workspaces* or any other dialog was open used to replace that dialog with the error, losing the
+  question on it. The error dialog now waits for that question to be answered.
+
+## Dependencies
+
+- **The version-coupled Avalonia set moves from 12.1.2 to 12.1.4**: `Avalonia`, `.Desktop`,
+  `.Themes.Fluent`, `.Fonts.Inter`, and the two headless test packages `Avalonia.Headless` and
+  `Avalonia.Headless.XUnit`.
+- **`Enigma.Avalonia.Desktop` moves from 1.2.0 to 1.3.0**, in the same set. It is backward compatible:
+  no API change, and no theme key renamed or re-valued.
+- **Deliberately held back:** `xunit.v3` stays at 3.2.2, although 4.0.2 is out. Under 4.x,
+  `Avalonia.Headless.XUnit` 12.1.4, which is built against xunit v3 3.x, fails test discovery for
+  every headless test. It moves once a headless harness built against 4.x ships.
+
+## Compatibility
+
+- **Unchanged from 1.9.0 where it matters.** Still **.NET 10**, now on **Avalonia 12.1.4**. Still
+  **Windows x64** and **Linux x64**, both shipped **self-contained**.
+- **The Windows MSI and the Linux tarball keep their layout.** The one addition is `app.ico` in the
+  application folder.
+- **Your data is read as it was left.** `settings.json`, `workspaces.json` and a stored session gain
+  nothing and lose nothing. There is nothing to migrate, in either direction between 1.9.0 and
+  1.10.0.
+
+## Version
+
+- **1.10.0**: a SemVer MINOR release. It adds the error dialogs and the publish scripts, removes the
+  splash screen and restyles the About dialog. Nothing you depend on changed incompatibly.
+
 # Enigma Markdown Editor v1.9.0 Release Notes
 
 A minor release about how the editor looks before you open it: it has a new icon. It shows

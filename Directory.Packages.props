@@ -27,17 +27,17 @@
        time. Mixing versions within the set breaks the build, so the whole group is held back
        until it moves as a unit. -->
   <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="12.1.2" />
-    <PackageVersion Include="Avalonia.Desktop" Version="12.1.2" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
-    <PackageVersion Include="Avalonia.Headless" Version="12.1.2" />
+    <PackageVersion Include="Avalonia" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.4" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.4" />
     <!-- The xunit.v3 half of the headless harness: [AvaloniaFact] runs a test body on the headless
-         session's own UI thread. Its 12.1.2 build depends on xunit.v3.extensibility.core 3.2.2, the
-         very version the test group below pins, so the two move together as well. -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.2" />
+         session's own UI thread. Its 12.1.4 build is compiled against xunit.v3.extensibility.core
+         3.2.2, the very version the test group below pins, so the two move together as well. -->
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.4" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
-    <PackageVersion Include="Enigma.Avalonia.Desktop" Version="1.2.0" />
+    <PackageVersion Include="Enigma.Avalonia.Desktop" Version="1.3.0" />
     <PackageVersion Include="Enigma.Icons.Avalonia" Version="1.0.0" />
   </ItemGroup>
 
@@ -66,6 +66,11 @@
 
   <!-- Tests (MTP-native: xunit.v3 only; coverlet.collector for coverage). No Microsoft.NET.Test.Sdk. -->
   <ItemGroup>
+    <!-- Held at 3.2.2 although 4.0.2 is out (FEATURE-2877): Avalonia.Headless.XUnit 12.1.4 is
+         compiled against xunit v3 3.x, and under 4.x its AvaloniaFactDiscoverer fails discovery with
+         MissingMethodException (TestIntrospectionHelper.GetTestCaseDetails), which fails every
+         [AvaloniaFact] in the Desktop suite. Move to 4.x together with an Avalonia.Headless.XUnit
+         built against it. -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>

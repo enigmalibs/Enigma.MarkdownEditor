@@ -3,6 +3,7 @@
 // referenced Enigma.Avalonia.* assemblies instead of Avalonia itself. See docs/plan/FEATURE-0F9A.md.
 using System;
 using Avalonia;
+using Enigma.MarkdownEditor.Desktop.Services;
 
 namespace Enigma.MarkdownEditor.Desktop;
 
@@ -17,9 +18,17 @@ public static class Program
     /// container is composed in <see cref="App.OnFrameworkInitializationCompleted"/> instead.
     /// </summary>
     /// <param name="args">Command-line arguments, forwarded to the Avalonia lifetime.</param>
+    /// <remarks>
+    /// The process-wide unhandled-exception hooks come first, so a failure anywhere in the start is
+    /// caught too; what is caught before the crash reporter exists is kept for it.
+    /// </remarks>
     [STAThread]
     public static void Main(string[] args)
-        => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    {
+        UnhandledExceptionHooks.Install();
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
 
     /// <summary>
     /// Builds the Avalonia application. Also used by the XAML previewer, which bypasses
