@@ -1,9 +1,11 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Enigma.Avalonia.Desktop.Controls.ContentDialog;
 using Enigma.Avalonia.Desktop.Services;
 using Enigma.Logging.Abstractions;
+using Enigma.MarkdownEditor.Core;
+using Enigma.MarkdownEditor.Desktop.Views;
 using Microsoft.Extensions.Logging;
 
 namespace Enigma.MarkdownEditor.Desktop.Services;
@@ -13,34 +15,41 @@ namespace Enigma.MarkdownEditor.Desktop.Services;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The flush is the point. Buffered log entries live in memory until the target writes them, and the
-/// two fatal paths below are running while the process is already on its way down — an entry that is
-/// only buffered when the process dies is an entry that never existed. Every handler therefore logs
-/// and immediately flushes through <see cref="IFlushableLoggerHandle"/>.
+/// The flush is the point. Buffered log entries live in memory until the target writes them, and an
+/// AppDomain report arrives while the process is already on its way down — an entry that is only
+/// buffered when the process dies is an entry that never existed. Every report is therefore logged and
+/// immediately flushed through <see cref="IFlushableLoggerHandle"/>, on whatever thread made it.
 /// </para>
 /// <para>
-/// The three handlers are deliberately not equivalent. A UI-thread exception is *handled* and the
-/// editor keeps running — losing a document's unsaved text to one bad event handler is a worse
-/// outcome than carrying on in a slightly unknown state. The other two are reports, not rescues.
+/// What is shown is decided on the UI thread. The dialog goes on the main window's host, which every
+/// other question shares, and <see cref="IContentDialogService.ShowAsync"/> takes the host over
+/// whatever is on it — so the error waits until that question is answered, and before the host is
+/// attached until it is. One error dialog at a time: what is reported while one is open or waiting is
+/// logged and goes no further, because a fault in a render or input loop can fire many times a second
+/// and a queue of identical dialogs would be worse than the fault. If the dialog itself cannot be
+/// shown, that is logged and no dialog is tried again: the net must not loop on itself.
 /// </para>
 /// </remarks>
-public sealed class CrashReporter
+public sealed class CrashReporter : ICrashReporter
 {
     private readonly ILogger<CrashReporter> _logger;
     private readonly IFlushableLoggerHandle _loggerHandle;
     private readonly IContentDialogService _dialogService;
     private readonly string _logFilePath;
 
-    // 0 = no error dialog on screen. A fault inside a render or input loop can fire many times a
-    // second, and a queue of identical dialogs would be worse than the fault.
-    private int _dialogShown;
+    // UI-thread state from here down: read and written only by work running on the dispatcher.
+    private ContentDialog? _host;
+    private Exception? _pending;
+    private bool _showing;
+    private bool _waitingForHost;
+    private bool _broken;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CrashReporter"/> class.
     /// </summary>
     /// <param name="logger">Where the crash is recorded.</param>
     /// <param name="loggerHandle">The handle whose <c>Flush</c> gets that record onto the disk.</param>
-    /// <param name="dialogService">Used for the best-effort error dialog.</param>
+    /// <param name="dialogService">Shows the error dialog on the main window's host.</param>
     /// <param name="logFilePath">Quoted in the dialog so the user can find the details.</param>
     /// <exception cref="ArgumentException"><paramref name="logFilePath"/> is empty or white-space.</exception>
     /// <exception cref="ArgumentNullException">Any reference argument is <see langword="null"/>.</exception>
@@ -59,81 +68,123 @@ public sealed class CrashReporter
     }
 
     /// <summary>
-    /// Subscribes the three handlers. Call once, after the container is built and before the window
-    /// is shown.
+    /// Tells the reporter which control the dialog service shows its dialogs on, so it can wait for a
+    /// question already open there. Call on the UI thread, once that host is registered with the
+    /// service; an error reported before then is shown now.
     /// </summary>
-    public void Install()
+    /// <param name="host">The host registered with the dialog service.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="host"/> is <see langword="null"/>.</exception>
+    public void AttachHost(ContentDialog host)
     {
-        AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
-        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
-        Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
+        ArgumentNullException.ThrowIfNull(host);
+
+        _host = host;
+        TryShowPending();
     }
 
-    private void OnAppDomainUnhandledException(object? sender, UnhandledExceptionEventArgs e)
+    /// <inheritdoc />
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
+    public void Report(Exception exception, UnhandledErrorSource source)
     {
-        _logger.LogCritical(
-            e.ExceptionObject as Exception,
-            "Unhandled exception on a background thread. Terminating: {IsTerminating}.",
-            e.IsTerminating);
+        ArgumentNullException.ThrowIfNull(exception);
+
+        switch (source)
+        {
+            case UnhandledErrorSource.AppDomain:
+                _logger.LogCritical(exception, "Unhandled exception on a background thread; the process is terminating.");
+                break;
+            case UnhandledErrorSource.UnobservedTask:
+                _logger.LogError(exception, "A faulted task was never observed.");
+                break;
+            default:
+                _logger.LogError(exception, "Unhandled exception on the UI thread.");
+                break;
+        }
+
         _loggerHandle.Flush();
 
-        // No dialog here on purpose: by the time the CLR raises this the process is already being
-        // torn down, so a dialog would race the shutdown and usually lose. The flushed entry is what
-        // survives, and it is what a bug report needs.
+        if (source == UnhandledErrorSource.AppDomain)
+        {
+            // No dialog here on purpose: by the time the CLR raises this the process is already being
+            // torn down, so a dialog would race the shutdown and usually lose. The flushed entry is
+            // what survives, and it is what a bug report needs.
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() => Present(exception));
     }
 
-    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    private void Present(Exception exception)
     {
-        _logger.LogError(e.Exception, "A faulted task was never observed.");
-        _loggerHandle.Flush();
-
-        // Marks the fault as seen. It no longer terminates the process by default, but leaving it
-        // unobserved would make the behaviour depend on a runtime configuration switch.
-        e.SetObserved();
-
-        Report("A background operation failed", e.Exception);
-    }
-
-    private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        _logger.LogError(e.Exception, "Unhandled exception on the UI thread.");
-        _loggerHandle.Flush();
-
-        // Keeps the editor alive. The alternative is that a bug in one command takes every open
-        // document's unsaved text down with it.
-        e.Handled = true;
-
-        Report("Something went wrong", e.Exception);
-    }
-
-    private void Report(string title, Exception exception)
-        => Dispatcher.UIThread.Post(() => _ = ShowAsync(title, exception));
-
-    private async Task ShowAsync(string title, Exception exception)
-    {
-        if (Interlocked.CompareExchange(ref _dialogShown, 1, 0) != 0)
+        if (_broken || _showing || _pending is not null)
         {
             return;
         }
 
+        _pending = exception;
+        TryShowPending();
+    }
+
+    private void TryShowPending()
+    {
+        if (_broken || _showing || _pending is null || _host is null)
+        {
+            return;
+        }
+
+        if (_host.IsOpen)
+        {
+            if (!_waitingForHost)
+            {
+                _waitingForHost = true;
+                _host.Closed += OnHostClosed;
+            }
+
+            return;
+        }
+
+        Exception exception = _pending;
+        _pending = null;
+        _showing = true;
+
+        _ = ShowAsync(exception);
+    }
+
+    private void OnHostClosed(object? sender, DialogResult result)
+    {
+        if (_host is not null)
+        {
+            _host.Closed -= OnHostClosed;
+        }
+
+        _waitingForHost = false;
+
+        // Posted rather than shown from here: the dialog that just closed is still raising its event,
+        // and the code that awaited it has yet to run.
+        Dispatcher.UIThread.Post(TryShowPending);
+    }
+
+    private async Task ShowAsync(Exception exception)
+    {
+        string message =
+            $"{ErrorDialog.Describe(exception)}{Environment.NewLine}{Environment.NewLine}" +
+            $"{AppInfo.DisplayName} is still running. The full details were written to {_logFilePath}.";
+
         try
         {
-            await _dialogService.ShowMessageAsync(
-                title,
-                $"{exception.GetType().Name}: {exception.Message}{Environment.NewLine}{Environment.NewLine}" +
-                $"The full details were written to {_logFilePath}.");
+            await _dialogService.ShowAsync(dialog => ErrorDialog.Configure(dialog, message)).ConfigureAwait(true);
         }
         catch (Exception failure)
         {
-            // The dialog host may not be registered yet — a crash during start-up is exactly when
-            // that happens — or the dialog itself may fail. Either way the log entry is already
-            // written, so this must not escalate into a second crash.
-            _logger.LogError(failure, "The crash dialog could not be shown.");
+            // Logged, never reported: a dialog that cannot be shown would otherwise report itself again
+            // and again. The original error is in the log already.
+            _broken = true;
+            _logger.LogError(failure, "The error dialog could not be shown; later errors are only logged.");
             _loggerHandle.Flush();
         }
         finally
         {
-            Interlocked.Exchange(ref _dialogShown, 0);
+            _showing = false;
         }
     }
 }
