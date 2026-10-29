@@ -14,9 +14,9 @@ namespace Enigma.MarkdownEditor.Desktop.UnitTests;
 /// <remarks>
 /// <para>
 /// <c>Assets/app.ico</c> is what the window, the <c>.exe</c> and the MSI shortcuts show, and
-/// <c>Assets/app-256.png</c> is what the splash and the About dialog draw. Both are binary files
-/// replaced wholesale when the artwork changes, and nothing else in the suite reads the icon at all —
-/// the Splash and About tests only prove the PNG resolves. A truncated copy or a wrong-sized export
+/// <c>Assets/app-256.png</c> is what the About dialog draws. Both are binary files replaced wholesale
+/// when the artwork changes, and nothing else in the suite reads the icon at all — the About tests
+/// only prove the PNG resolves. A truncated copy or a wrong-sized export
 /// would otherwise ship without a single failure.
 /// </para>
 /// <para>
@@ -63,7 +63,7 @@ public sealed class AppIconTests
     }
 
     [AvaloniaFact]
-    public void TheSplashAndAboutImage_Is256PixelsSquare()
+    public void TheAboutImage_Is256PixelsSquare()
     {
         byte[] png = Read("app-256.png");
 
@@ -73,6 +73,18 @@ public sealed class AppIconTests
         Assert.Equal("IHDR"u8.ToArray(), png[12..16]);
         Assert.Equal(256, BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(16)));
         Assert.Equal(256, BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20)));
+    }
+
+    [AvaloniaFact]
+    public void TheIcon_IsAlsoAFileBesideTheExecutable()
+    {
+        // Copied to the output root as a plain file so shortcuts and launchers can point at it; the
+        // copy flows into this project's output through the project reference, as it flows into a
+        // publish. Byte for byte, or a stale copy would outlive the next artwork change.
+        string path = Path.Combine(AppContext.BaseDirectory, "app.ico");
+
+        Assert.True(File.Exists(path), $"{path} is missing.");
+        Assert.Equal(Read("app.ico"), File.ReadAllBytes(path));
     }
 
     private static byte[] Read(string asset)

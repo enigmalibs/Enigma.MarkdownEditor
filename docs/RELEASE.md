@@ -118,12 +118,25 @@ On the release branch, before merging:
       `.exe` in Explorer at the *Small*, *Medium* and *Extra large* views (these use the 16, 48 and
       256 px frames). Repeat with Windows switched to the other app/taskbar theme. The mark is a
       dark square, so on a dark taskbar its rounded edge and the outlined box must still stand out.
-      The splash and the About dialog show the same mark, from `Assets/app-256.png`. Windows caches
+      The About dialog shows the same mark, from `Assets/app-256.png`. Windows caches
       icons per path, so an `.exe` that still shows the previous icon after a rebuild is the cache
       (`ie4uinit.exe -show` refreshes it), not the build. `AppIconTests` checks the `.ico`'s frame
       set and the PNG's size, but the headless suite renders without Skia, so no test can say how the
       icon looks. This is what `FEATURE-EA38` left open; §2's desktop-menu item covers the Linux
       launcher.
+- [ ] **The main window comes first, and About reads as every Enigma app's.** Start the Release
+      build: the main window is the first thing on screen, with nothing before it. Open the About
+      dialog from the info button. It shows the icon, the name, the version, the build line and the
+      copyright, centred, with no title and no icon column beside them, and a single *Close* that
+      `Enter` activates. Then open Enigma Git Client's About beside it: the same layout, sizes and
+      colours, in both themes. Platform-independent. `AboutViewTests` and `AboutDialogServiceTests`
+      pin the markup and the dialog's configuration, but no test can set two applications side by
+      side. This is what `FEATURE-3185` and `FEATURE-982C` left open.
+- [ ] **`app.ico` sits beside the executable.** `artifacts/publish/win-x64/app.ico` exists after
+      §4's publish, and so does `app.ico` in the installed `%ProgramFiles%\Enigma Markdown Editor`
+      after an MSI install. Both are the current icon. `AppIconTests` pins the build output's copy
+      byte for byte; the publish folder and the installer are this check's. This is what
+      `FEATURE-7CE4` left open.
 - [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
       rule.
 
@@ -152,16 +165,12 @@ cd EnigmaMarkdownEditor-X.Y.Z-linux-x64
 - [ ] The application appears in the desktop menu, with its icon, and launches from there — not only
       from the terminal. (This is what proves the `.desktop` `Exec` substitution and the icon
       install; a terminal launch proves neither.)
-- [ ] **Splash** — a splash screen appears centred, **painted** (the icon, the name and the version
-      — not a blank rectangle), for about a second, and the main window replaces it. It must not
-      appear in the task switcher, and it must not still be on screen once the editor is up. This is
-      the check Linux earns on its own: the window is undecorated, topmost and owned by a hidden
-      parking window, and each of those three is compositor-dependent.
 - [ ] **Launch** — the window opens, at a sane size, with all three panes.
 - [ ] **About** — the info button in the toolbar opens the dialog, **with the application icon drawn
-      in it**, plus the version, the build line and the credits. The icon is the point: it is a PNG
-      resource decoded by Skia, and a bitmap that fails to decode draws nothing and logs nothing, so
-      this is the only place a broken `Assets/app-256.png` on Linux would show. `Escape` closes it.
+      in it**, plus the name, the version, the build line and the copyright. The icon is the point:
+      it is a PNG resource decoded by Skia, and a bitmap that fails to decode draws nothing and logs
+      nothing, so this is the only place a broken `Assets/app-256.png` on Linux would show. `Escape`
+      closes it.
 - [ ] **Workspace** — add a folder, and the tree lists it. Filter the tree. Change a file outside the
       editor and the tree notices.
 - [ ] **Tree operations** — create, rename and move a note. **Delete one, answer the confirmation
@@ -225,7 +234,9 @@ git push origin X.Y.Z
 
 Both start from a publish. The publish output is what actually ships — the MSI harvests it and the
 tarball wraps it — so a stale `artifacts/publish/` silently packages the previous version. The
-scripts clean it for you unless you pass `-NoClean`.
+scripts clean it for you unless you pass `-NoClean`. (`packaging/windows/publish.*` and
+`packaging/linux/publish.sh` are not these: they publish a framework-dependent ReadyToRun build into
+`bin/` for local use, and nothing here reads their output.)
 
 ```bash
 ./build/publish.ps1 -Rid win-x64      # -> artifacts/publish/win-x64
@@ -307,7 +318,5 @@ part of what is checked.
 - [ ] The tag exists on `main` and the release notes match `RELEASENOTES.md`.
 - [ ] A fresh install writes its per-user folder — `%APPDATA%\Enigma.MarkdownEditor` or
       `~/.config/Enigma.MarkdownEditor` — and starts as a first run, without inheriting the build
-      machine's session. **Watch the splash on this start in particular**: a first run has no session
-      to restore, so it composes fast enough to be held on screen for its one-second minimum rather
-      than closing as soon as it is ready. The splash must still be replaced by the main window, and
-      the application must still be running afterwards.
+      machine's session. The main window must be the first thing on screen,
+      and the application must still be running afterwards.

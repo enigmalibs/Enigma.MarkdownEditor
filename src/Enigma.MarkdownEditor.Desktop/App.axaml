@@ -17,7 +17,7 @@
        Application.Resources. A StyleInclude here fails the build with AVLN2000.
        Any dictionary of our own that overrides an Enigma* key must be merged AFTER this one.
        RequestedThemeVariant is deliberately unset here: App assigns it from the persisted Theme
-       setting before the first window - the splash - is shown, and IThemeService assigns it again
+       setting before the main window is built, and IThemeService assigns it again
        whenever the setting changes. Declaring a variant in markup would only be overwritten a
        moment later. -->
   <Application.Resources>

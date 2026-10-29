@@ -1,9 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using Avalonia.Media;
+using Enigma.Avalonia.Desktop.Controls.ContentDialog;
 using Enigma.Avalonia.Desktop.Services;
-using Enigma.Icons.Avalonia;
-using Enigma.Icons.Phosphor;
 using Enigma.MarkdownEditor.Desktop.ViewModels;
 using Enigma.MarkdownEditor.Desktop.Views;
 
@@ -19,12 +17,6 @@ namespace Enigma.MarkdownEditor.Desktop.Services;
 /// </remarks>
 public sealed class AboutDialogService : IAboutDialogService
 {
-    /// <summary>
-    /// The heading glyph, resolved once. The XAML equivalent is <c>{ei:IconGeometry Info}</c>, which
-    /// is unavailable here because the dialog is configured in code rather than in markup.
-    /// </summary>
-    private static readonly Geometry Icon = PhosphorIconSet.Instance.GetGlyph(PhosphorIcon.Info).ToGeometry();
-
     private readonly Func<AboutViewModel> _createViewModel;
     private readonly IContentDialogService _dialogService;
 
@@ -48,14 +40,19 @@ public sealed class AboutDialogService : IAboutDialogService
             DataContext = _createViewModel(),
         };
 
+        // The service resets the host before configuring it — buttons, commands, icon and its brush —
+        // so only what this dialog has is set.
         await _dialogService.ShowAsync(dialog =>
         {
-            dialog.Title = "About";
+            // No title and no icon, as in every Enigma app's About dialog: the card draws them as a
+            // column beside the content, and the view already shows the application's own icon and
+            // name above everything else.
+            dialog.Title = null;
             dialog.Content = view;
-            dialog.IconData = Icon;
 
             // One button, and it only dismisses: the dialog asks nothing.
             dialog.CloseButtonText = "Close";
-        });
+            dialog.DefaultButton = DefaultButton.Close;
+        }).ConfigureAwait(true);
     }
 }

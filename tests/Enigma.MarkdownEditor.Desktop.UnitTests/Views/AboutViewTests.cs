@@ -67,39 +67,37 @@ public sealed class AboutViewTests
     [AvaloniaFact]
     public void NoCopyrightNotice_CollapsesItsLine()
     {
-        AboutView view = Show(new AboutViewModel("1.2.3", "abcdef1", string.Empty, AboutViewModel.DefaultCredits));
+        AboutView view = Show(new AboutViewModel("1.2.3", "abcdef1", string.Empty));
 
         Assert.False(Named(view, "Copyright").IsVisible);
     }
 
     [AvaloniaFact]
-    public void TheCreditsList_IsTheViewModelsOwn()
+    public void TheProductName_IsDrawnInTheForegroundBrush()
     {
         AboutViewModel viewModel = Create("1.2.3", "abcdef1");
         AboutView view = Show(viewModel);
 
-        ItemsControl credits = Assert.IsType<ItemsControl>(Named(view, "Credits"));
+        // Set explicitly, as in every Enigma app's About view, rather than inherited from whatever
+        // the dialog card happens to paint its text with.
+        TextBlock name = view.GetLogicalDescendants().OfType<TextBlock>().Single(block => block.Classes.Contains("productName"));
 
-        Assert.Same(viewModel.Credits, credits.ItemsSource);
+        Assert.True(view.TryFindResource("EnigmaForegroundBrush", view.ActualThemeVariant, out object? brush));
+        Assert.Same(brush, name.Foreground);
     }
 
     [AvaloniaFact]
-    public void EveryCredit_IsDrawnWithItsLicence()
+    public void TheView_ListsNothingBelowTheCopyright()
     {
-        AboutViewModel viewModel = Create("1.2.3", "abcdef1");
-        AboutView view = Show(viewModel);
+        AboutView view = Show(Create("1.2.3", "abcdef1"));
 
-        string[] texts = [.. view.GetLogicalDescendants().OfType<TextBlock>().Select(block => block.Text ?? string.Empty)];
-
-        Assert.All(viewModel.Credits, credit =>
-        {
-            Assert.Contains(credit.Name, texts);
-            Assert.Contains(credit.License, texts);
-        });
+        // The shared layout is the icon, the name, the version and build lines and the copyright:
+        // no attribution list, and no other list of any kind.
+        Assert.Empty(view.GetLogicalDescendants().OfType<ItemsControl>());
     }
 
     private static AboutViewModel Create(string version, string? buildSha)
-        => new(version, buildSha, "Copyright © 2026 Josué Clément", AboutViewModel.DefaultCredits);
+        => new(version, buildSha, "Copyright © 2026 Josué Clément");
 
     // By name rather than through a generated field: what is asserted is the markup, and a control
     // that lost its x:Name should fail this rather than stop compiling somewhere else.
