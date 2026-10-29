@@ -124,6 +124,19 @@ On the release branch, before merging:
       set and the PNG's size, but the headless suite renders without Skia, so no test can say how the
       icon looks. This is what `FEATURE-EA38` left open; §2's desktop-menu item covers the Linux
       launcher.
+- [ ] **The main window comes first, and About reads as every Enigma app's.** Start the Release
+      build: the main window is the first thing on screen, with nothing before it. Open the About
+      dialog from the info button. It shows the icon, the name, the version, the build line and the
+      copyright, centred, with no title and no icon column beside them, and a single *Close* that
+      `Enter` activates. Then open Enigma Git Client's About beside it: the same layout, sizes and
+      colours, in both themes. Platform-independent. `AboutViewTests` and `AboutDialogServiceTests`
+      pin the markup and the dialog's configuration, but no test can set two applications side by
+      side. This is what `FEATURE-3185` and `FEATURE-982C` left open.
+- [ ] **`app.ico` sits beside the executable.** `artifacts/publish/win-x64/app.ico` exists after
+      §4's publish, and so does `app.ico` in the installed `%ProgramFiles%\Enigma Markdown Editor`
+      after an MSI install. Both are the current icon. `AppIconTests` pins the build output's copy
+      byte for byte; the publish folder and the installer are this check's. This is what
+      `FEATURE-7CE4` left open.
 - [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
       rule.
 

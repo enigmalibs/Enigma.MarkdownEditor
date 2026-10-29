@@ -7,8 +7,9 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.9.0** — A new application icon, on the window, the taskbar, the shortcuts, the
-> splash screen, the About dialog and the Linux launcher. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.10.0** — Starts straight into its window with no splash screen, shows every
+> unhandled error (a failed start-up included) in a dialog, and has the About dialog of every Enigma
+> app. See [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 

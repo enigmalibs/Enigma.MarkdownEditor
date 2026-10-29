@@ -10,7 +10,7 @@
     <!-- The product version, shared with the Desktop app: this library ships only inside it,
          so the two move together and a release bumps both. Distinct from the package versions
          in Directory.Packages.props, which are dependency pins and unrelated to it. -->
-    <Version>1.9.0</Version>
+    <Version>1.10.0</Version>
     <!-- GenerateDocumentationFile is deliberately absent, for the same reason as the TFM above: an
          app-internal library ships no XML doc file, and enabling it under TreatWarningsAsErrors would
          demand an XML comment on every public member of the whole engine (CS1591). -->

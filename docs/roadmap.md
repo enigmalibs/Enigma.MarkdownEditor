@@ -102,7 +102,7 @@
 | - PHASE01    | Early hooks & uniform error dialog    | DONE      | (in FEATURE-E31C.md)      |
 | - PHASE02    | Start-up failure dialog               | DONE      | (in FEATURE-E31C.md)      |
 | FEATURE-F36D | Publish scripts for Windows and Linux | DONE      | docs/plan/FEATURE-F36D.md |
-| FEATURE-B260 | Release 1.10.0                        | TODO      | docs/plan/FEATURE-B260.md |
+| FEATURE-B260 | Release 1.10.0                        | DONE      | docs/plan/FEATURE-B260.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,
