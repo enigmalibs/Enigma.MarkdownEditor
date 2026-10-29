@@ -11,7 +11,7 @@
     <!-- The headless harness. Avalonia.Headless supplies a windowing and drawing platform with no
          screen behind it; Avalonia.Headless.XUnit supplies [AvaloniaFact]/[AvaloniaTheory], which run
          a test body on that platform's own UI thread. Part of the version-coupled Avalonia set
-         (12.1.2): bump them with the rest of it, never alone. -->
+         (12.1.4): bump them with the rest of it, never alone. -->
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Avalonia.Headless.XUnit" />
   </ItemGroup>

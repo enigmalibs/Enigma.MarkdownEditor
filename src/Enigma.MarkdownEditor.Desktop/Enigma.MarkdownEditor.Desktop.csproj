@@ -21,7 +21,7 @@
        Directory.Packages.props (CPM). The `<Version>` property above is the product version, and
        is a different thing. -->
   <ItemGroup>
-    <!-- Version-coupled Avalonia set (12.1.2): bump all four together, never one alone. -->
+    <!-- Version-coupled Avalonia set (12.1.4): bump all four together, never one alone. -->
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
