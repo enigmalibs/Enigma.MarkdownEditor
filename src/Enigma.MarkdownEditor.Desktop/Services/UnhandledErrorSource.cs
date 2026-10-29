@@ -21,4 +21,10 @@ public enum UnhandledErrorSource
     /// marked handled, so the editor carries on.
     /// </summary>
     Dispatcher,
+
+    /// <summary>
+    /// The start-up threw before the main window was up. The application cannot carry on; a window
+    /// of its own shows the error, and closing it ends the process.
+    /// </summary>
+    Startup,
 }

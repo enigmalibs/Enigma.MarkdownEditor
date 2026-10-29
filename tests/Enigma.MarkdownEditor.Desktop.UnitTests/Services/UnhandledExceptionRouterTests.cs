@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Enigma.MarkdownEditor.Desktop.Services;
+using Enigma.MarkdownEditor.Desktop.UnitTests.Fakes;
 using Xunit;
 
 namespace Enigma.MarkdownEditor.Desktop.UnitTests.Services;
@@ -105,21 +105,25 @@ public sealed class UnhandledExceptionRouterTests
     }
 
     [Fact]
+    public void IsAttached_FollowsTheReporter()
+    {
+        UnhandledExceptionRouter router = new();
+
+        Assert.False(router.IsAttached);
+
+        router.Attach(new RecordingCrashReporter());
+        Assert.True(router.IsAttached);
+
+        router.Detach();
+        Assert.False(router.IsAttached);
+    }
+
+    [Fact]
     public void NullArguments_AreRejected()
     {
         UnhandledExceptionRouter router = new();
 
         Assert.Throws<ArgumentNullException>(() => router.Attach(null!));
         Assert.Throws<ArgumentNullException>(() => router.Report(null!, UnhandledErrorSource.Dispatcher));
-    }
-
-    /// <summary>
-    /// A crash reporter that keeps what it was handed, in order.
-    /// </summary>
-    private sealed class RecordingCrashReporter : ICrashReporter
-    {
-        public List<(Exception Exception, UnhandledErrorSource Source)> Reports { get; } = [];
-
-        public void Report(Exception exception, UnhandledErrorSource source) => Reports.Add((exception, source));
     }
 }

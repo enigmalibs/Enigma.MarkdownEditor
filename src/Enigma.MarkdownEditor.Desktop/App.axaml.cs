@@ -42,6 +42,26 @@ public partial class App : Application
         // been dispatched yet, so every UI-thread failure from here on is caught.
         UnhandledExceptionHooks.InstallDispatcher();
 
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            // All of the start-up, guarded: it runs here rather than as a dispatcher job, so what it
+            // throws would otherwise end the process from Main with nothing on screen.
+            StartupGuard.Run(
+                () => Start(desktop),
+                window => desktop.MainWindow = window,
+                UnhandledExceptionHooks.Router,
+                AppPaths.LogFile);
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Reads what the start-up depends on, applies the theme, and composes the application.
+    /// </summary>
+    /// <param name="desktop">The lifetime the main window is given to.</param>
+    private void Start(IClassicDesktopStyleApplicationLifetime desktop)
+    {
         // Before the load, and it has to be: the loader recovers an unreadable settings file by moving
         // it aside, which leaves the path absent — so the same question asked one line later would
         // read a corruption as a first run and re-onboard someone who has been using the editor for
@@ -61,18 +81,13 @@ public partial class App : Application
         // has to be applied before it is shown, and the window is built a few lines below.
         ConfigLoadResult<SessionState> session = SessionLoader.Load(AppPaths.SessionFile);
 
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            // The theme, before the window exists, so its first frame is painted in the right
-            // variant rather than in the OS default and repainted a moment later. ThemeService owns
-            // the same mapping and applies it whenever the setting changes; it cannot be used here
-            // because the container that holds it is built below.
-            RequestedThemeVariant = ThemeService.ToVariant(settings.Config.Value.Theme);
+        // The theme, before the window exists, so its first frame is painted in the right variant
+        // rather than in the OS default and repainted a moment later. ThemeService owns the same
+        // mapping and applies it whenever the setting changes; it cannot be used here because the
+        // container that holds it is built below.
+        RequestedThemeVariant = ThemeService.ToVariant(settings.Config.Value.Theme);
 
-            Compose(desktop, firstRun, settings, workspaces, session);
-        }
-
-        base.OnFrameworkInitializationCompleted();
+        Compose(desktop, firstRun, settings, workspaces, session);
     }
 
     /// <summary>

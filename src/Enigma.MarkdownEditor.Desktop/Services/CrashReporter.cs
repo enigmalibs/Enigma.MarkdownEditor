@@ -21,7 +21,8 @@ namespace Enigma.MarkdownEditor.Desktop.Services;
 /// immediately flushed through <see cref="IFlushableLoggerHandle"/>, on whatever thread made it.
 /// </para>
 /// <para>
-/// What is shown is decided on the UI thread. The dialog goes on the main window's host, which every
+/// What is shown is decided on the UI thread — for the two sources the process survives; a failed
+/// start-up gets a window of its own (<see cref="StartupGuard"/>). The dialog goes on the main window's host, which every
 /// other question shares, and <see cref="IContentDialogService.ShowAsync"/> takes the host over
 /// whatever is on it — so the error waits until that question is answered, and before the host is
 /// attached until it is. One error dialog at a time: what is reported while one is open or waiting is
@@ -93,6 +94,9 @@ public sealed class CrashReporter : ICrashReporter
             case UnhandledErrorSource.AppDomain:
                 _logger.LogCritical(exception, "Unhandled exception on a background thread; the process is terminating.");
                 break;
+            case UnhandledErrorSource.Startup:
+                _logger.LogCritical(exception, "The application failed to start.");
+                break;
             case UnhandledErrorSource.UnobservedTask:
                 _logger.LogError(exception, "A faulted task was never observed.");
                 break;
@@ -108,6 +112,12 @@ public sealed class CrashReporter : ICrashReporter
             // No dialog here on purpose: by the time the CLR raises this the process is already being
             // torn down, so a dialog would race the shutdown and usually lose. The flushed entry is
             // what survives, and it is what a bug report needs.
+            return;
+        }
+
+        if (source == UnhandledErrorSource.Startup)
+        {
+            // Shown by the start-up error window instead: the main window, and its host, never came.
             return;
         }
 
