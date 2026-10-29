@@ -14,9 +14,9 @@ namespace Enigma.MarkdownEditor.Desktop.UnitTests;
 /// <remarks>
 /// <para>
 /// <c>Assets/app.ico</c> is what the window, the <c>.exe</c> and the MSI shortcuts show, and
-/// <c>Assets/app-256.png</c> is what the splash and the About dialog draw. Both are binary files
-/// replaced wholesale when the artwork changes, and nothing else in the suite reads the icon at all —
-/// the Splash and About tests only prove the PNG resolves. A truncated copy or a wrong-sized export
+/// <c>Assets/app-256.png</c> is what the About dialog draws. Both are binary files replaced wholesale
+/// when the artwork changes, and nothing else in the suite reads the icon at all — the About tests
+/// only prove the PNG resolves. A truncated copy or a wrong-sized export
 /// would otherwise ship without a single failure.
 /// </para>
 /// <para>
@@ -63,7 +63,7 @@ public sealed class AppIconTests
     }
 
     [AvaloniaFact]
-    public void TheSplashAndAboutImage_Is256PixelsSquare()
+    public void TheAboutImage_Is256PixelsSquare()
     {
         byte[] png = Read("app-256.png");
 

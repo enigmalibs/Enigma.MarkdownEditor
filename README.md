@@ -115,9 +115,6 @@ are passed over quietly, and a session file that cannot be read costs you a sess
 
 **Start-up**
 
-- A splash screen while it loads — the icon, the name and the version, centred, replaced by the main
-  window as soon as that window is ready and never on screen for less than a second. It stays out of
-  the task switcher, so it leaves nothing behind.
 - The very first start asks three questions, once: vim keys on or off, the theme, and the folder your
   notes live in. *Skip* is an answer too, and either way it never asks again — everything it asks is
   in settings afterwards.

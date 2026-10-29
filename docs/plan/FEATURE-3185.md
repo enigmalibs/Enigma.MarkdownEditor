@@ -1,7 +1,7 @@
 # FEATURE-3185 — Remove the splash screen
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** `feature/feature-3185-remove-splash-screen`, cut from the run branch at build time.
+**Status:** DONE
+**Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md` · **Branch:** `feature/feature-3185-remove-splash-screen`, cut from the run branch at build time.
 **Run:** feature/2026-10-29-uniform-enigma-apps
 
 ## Objective
