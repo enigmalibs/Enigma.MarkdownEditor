@@ -1,7 +1,7 @@
 # FEATURE-E31C — Catch all unhandled exceptions
 
-**Status: TODO** · 2 phases · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** one per phase, cut from the run branch at build time.
+**Status:** IN PROGRESS
+**Type:** FEATURE · 2 phases · Roadmap: `docs/roadmap.md` · **Branch:** one per phase, cut from the run branch at build time.
 **Run:** feature/2026-10-29-uniform-enigma-apps
 
 ## Objective
@@ -52,7 +52,8 @@ dialog.
 
 ## PHASE01 — Early hooks & uniform error dialog
 
-**Status: TODO** · Branch: `feature/feature-e31c-phase01-early-hooks-error-dialog`
+**Status:** DONE
+**Branch:** `feature/feature-e31c-phase01-early-hooks-error-dialog`
 
 ### Steps
 
@@ -111,7 +112,8 @@ dialog.
 
 ## PHASE02 — Start-up failure dialog
 
-**Status: TODO** · Branch: `feature/feature-e31c-phase02-startup-failure-dialog`
+**Status:** TODO
+**Branch:** `feature/feature-e31c-phase02-startup-failure-dialog`
 
 ### Steps
 

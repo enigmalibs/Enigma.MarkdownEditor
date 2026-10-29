@@ -38,6 +38,10 @@ public partial class App : Application
     /// <inheritdoc />
     public override void OnFrameworkInitializationCompleted()
     {
+        // The platform is up by now — touching the dispatcher before it is not safe — and nothing has
+        // been dispatched yet, so every UI-thread failure from here on is caught.
+        UnhandledExceptionHooks.InstallDispatcher();
+
         // Before the load, and it has to be: the loader recovers an unreadable settings file by moving
         // it aside, which leaves the path absent — so the same question asked one line later would
         // read a corruption as a first run and re-onboard someone who has been using the editor for
@@ -115,8 +119,10 @@ public partial class App : Application
         IServiceProvider services = host.Services;
         ILogger<App> logger = services.GetRequiredService<ILogger<App>>();
 
-        // First, so that everything below is already covered — including the window construction.
-        services.GetRequiredService<CrashReporter>().Install();
+        // First, so that everything below reaches the log — including the window construction — and
+        // whatever was caught before the container existed reaches it now.
+        CrashReporter crashReporter = services.GetRequiredService<CrashReporter>();
+        UnhandledExceptionHooks.Router.Attach(crashReporter);
 
         if (settings.Failure is not null)
         {
@@ -157,6 +163,9 @@ public partial class App : Application
         services.GetRequiredService<IFileDialogService>().SetStorageProvider(mainWindow.StorageProvider);
         services.GetRequiredService<IFolderDialogService>().SetStorageProvider(mainWindow.StorageProvider);
 
+        // The error dialog goes on the same host, and has to wait for whatever question is open on it.
+        crashReporter.AttachHost(mainWindow.HostDialog);
+
         // Assigned, not shown: the lifetime shows its MainWindow on its way into the message loop.
         desktop.MainWindow = mainWindow;
         logger.LogInformation("{DisplayName} started.", AppInfo.DisplayName);
@@ -164,6 +173,10 @@ public partial class App : Application
         desktop.Exit += (_, _) =>
         {
             logger.LogInformation("{DisplayName} is shutting down.", AppInfo.DisplayName);
+
+            // Before the sequence below disposes the container that owns the reporter: a late report
+            // goes to Trace rather than through a disposed logger.
+            UnhandledExceptionHooks.Router.Detach();
 
             // Both resolved before the sequence starts. If it overruns, the work walked away from
             // is the work that disposes the container, so asking that container for a service
