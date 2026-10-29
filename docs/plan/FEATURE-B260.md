@@ -1,7 +1,7 @@
 # FEATURE-B260 — Release 1.10.0
 
-**Status: TODO** · single phase · Roadmap: `docs/roadmap.md`
-**Type:** FEATURE · **Branch:** `feature/feature-b260-release-1-10-0`, cut from the run branch at build time.
+**Status:** DONE
+**Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md` · **Branch:** `feature/feature-b260-release-1-10-0`, cut from the run branch at build time.
 **Run:** feature/2026-10-29-uniform-enigma-apps
 
 ## Objective
