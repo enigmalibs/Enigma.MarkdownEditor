@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Enigma.MarkdownEditor application icon without the tile, simplified for the 16 to 32 px frames: enigma-markdown-editor.svg with heavier marks and fewer details.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256">
+  <rect x="32" y="72" width="192" height="112" rx="16" fill="none" stroke="#6A9BF4" stroke-width="16"/>
+  <path d="M48 160V96H72L88 116L104 96H128V160H104V132L88 152L72 132V160Z" fill="#6A9BF4"/>
+  <path d="M168 96H192V124H208L180 160L152 124H168Z" fill="#63C77D"/>
+</svg>

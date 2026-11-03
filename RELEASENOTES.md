@@ -1,3 +1,70 @@
+# Enigma Markdown Editor v1.11.0 Release Notes
+
+A minor release about how the editor looks and how its Windows installer is made. The icon keeps its
+mark and loses the dark tile behind it. The Windows installer is now built by one script in the
+repository, and it upgrades every earlier installation in place, as before. Nothing in your settings,
+workspaces or sessions changed shape, and none of them needs a migration.
+
+## New Features
+
+- **The Windows installer is built in one command.** `packaging\windows\buildmsi.bat` (or
+  `buildmsi.ps1` beside it) builds `artifacts\Enigma.MarkdownEditor.X.Y.Z.msi` from any directory.
+  - **What it does:** it starts with `git clean -dxf`, which deletes every file git does not track,
+    ignored ones included. It then runs the self-contained win-x64 publish (`build/publish.ps1`) and
+    packages it with Enigma.Msi.
+  - **Nothing to edit per release.** The version comes from the csproj, and the Enigma.Msi profile is
+    written for each build and left beside the MSI.
+  - **It checks first.** It needs `git`, the .NET 10 SDK and the WiX CLI on the `PATH` and checks all
+    three before it cleans anything. It also stops if the Desktop and Core csprojs disagree on the
+    version.
+  - **The worker is in the repository.** Enigma.Msi 1.7.0's worker CLI is vendored in
+    `packaging/windows/Enigma.Msi.Worker/`, with its source and licences in a README there.
+  - This replaces the hand-cloned profile per version and the manual build in Enigma.Msi.Desktop.
+    `docs/RELEASE.md` §4 has the details.
+
+## Changes
+
+- **A new icon, without the tile.** The mark is the same blue outlined `M↓` box with a green arrow,
+  now on a transparent background instead of a dark rounded square. The small sizes (16 to 32 px) use
+  a simplified drawing with heavier lines. It is the same art in the window, the taskbar, the `.exe`,
+  the About dialog, the MSI's shortcuts and the Linux launcher. Its SVG masters are now in
+  `packaging/icon/`.
+- **The installer carries the product's name.** *Apps & features* lists it as **Enigma Markdown
+  Editor**; earlier installers said `Enigma.MarkdownEditor.Desktop`. The MSI file is named
+  `Enigma.MarkdownEditor.1.11.0.msi` where it used to be `EnigmaMarkdownEditor.msi`.
+- **The MSI is uncompressed**, so it builds in seconds. The download is larger, about 240 MB. What it
+  installs is the same self-contained application as before.
+
+## Dependencies
+
+- **The Avalonia set stays at 12.1.4**, with `Enigma.Avalonia.Desktop` **1.3.0**. Avalonia 12.1.5 is
+  out, but `Enigma.Avalonia.Desktop` 1.3.0, still the latest, is built against 12.1.4, and the set
+  moves only with it.
+- **Still held back:** `xunit.v3` stays at 3.2.2, although 4.0.2 is out, for the reason given in
+  1.10.0. `Avalonia.Headless.XUnit` 12.1.4 is built against xunit v3 3.x and fails test discovery
+  under 4.x.
+- The installer build uses Enigma.Msi 1.7.0's worker, on WixSharp_wix4 2.14.2. It is a build tool and
+  ships in neither artifact.
+- Nothing else is outdated (`dotnet list package --outdated`, 2026-11-03).
+
+## Compatibility
+
+- **Unchanged from 1.10.0 where it matters.** Still **.NET 10** on **Avalonia 12.1.4**. Still
+  **Windows x64** and **Linux x64**, both shipped **self-contained**.
+- **The MSI upgrades an earlier one in place.** It carries the same upgrade code as every MSI since
+  1.0.0, so installing 1.11.0 replaces an installed 1.x instead of sitting beside it. It installs to
+  the same folder: `Program Files (x86)\Enigma Markdown Editor`, because the installer package is 32-bit.
+  The README used to call that folder `%ProgramFiles%`.
+- **The Linux tarball keeps its layout.** Only the icons' artwork changed.
+- **Your data is read as it was left.** `settings.json`, `workspaces.json` and a stored session gain
+  nothing and lose nothing. There is nothing to migrate, in either direction between 1.10.0 and
+  1.11.0.
+
+## Version
+
+- **1.11.0**: a SemVer MINOR release. It changes the icon's artwork and adds the installer build
+  script. Nothing you depend on changed incompatibly.
+
 # Enigma Markdown Editor v1.10.0 Release Notes
 
 A minor release that brings the editor in line with the rest of the Enigma family. It starts straight
