@@ -103,6 +103,11 @@
 | - PHASE02    | Start-up failure dialog               | DONE      | (in FEATURE-E31C.md)      |
 | FEATURE-F36D | Publish scripts for Windows and Linux | DONE      | docs/plan/FEATURE-F36D.md |
 | FEATURE-B260 | Release 1.10.0                        | DONE      | docs/plan/FEATURE-B260.md |
+| FEATURE-8156 | New icon set without the tile         | DONE      | docs/plan/FEATURE-8156.md |
+| FEATURE-1E34 | Windows MSI build script              | DONE      | docs/plan/FEATURE-1E34.md |
+| - PHASE01    | Vendor the Enigma.Msi worker CLI      | DONE      | (in FEATURE-1E34.md)      |
+| - PHASE02    | The buildmsi script                   | DONE      | (in FEATURE-1E34.md)      |
+| FEATURE-FB91 | Release 1.11.0                        | DONE      | docs/plan/FEATURE-FB91.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,

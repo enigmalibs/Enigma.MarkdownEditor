@@ -9,15 +9,16 @@ using Xunit;
 namespace Enigma.MarkdownEditor.Desktop.UnitTests;
 
 /// <summary>
-/// The application icon's two embedded assets, read as bytes.
+/// The application icon's embedded assets and the Linux installer's copies, read as bytes.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>Assets/app.ico</c> is what the window, the <c>.exe</c> and the MSI shortcuts show, and
-/// <c>Assets/app-256.png</c> is what the About dialog draws. Both are binary files replaced wholesale
-/// when the artwork changes, and nothing else in the suite reads the icon at all — the About tests
-/// only prove the PNG resolves. A truncated copy or a wrong-sized export
-/// would otherwise ship without a single failure.
+/// <c>Assets/app.ico</c> is what the window, the <c>.exe</c> and the MSI shortcuts show,
+/// <c>Assets/app-256.png</c> is what the About dialog draws, and <c>packaging/linux/icons/</c> is what
+/// the Linux launcher shows. All are binary files replaced wholesale when the artwork changes, and
+/// nothing else in the suite reads the icon at all — the About tests only prove the PNG resolves. A
+/// truncated copy, a wrong-sized export or a file left out of the swap would otherwise ship without a
+/// single failure, which is why the PNGs are pinned to the <c>.ico</c>'s frames byte for byte.
 /// </para>
 /// <para>
 /// The headless platform draws without Skia, so nothing here decodes an image. What is read is the
@@ -76,6 +77,32 @@ public sealed class AppIconTests
     }
 
     [AvaloniaFact]
+    public void TheAboutImage_IsTheIconsLargestFrame()
+    {
+        // The About dialog draws the PNG and the shell draws the .ico, so they must be the same art: a
+        // set swapped in one place but not the other would show two icons, and every other fact here
+        // would still pass.
+        Assert.Equal(Frame(Read("app.ico"), 256), Read("app-256.png"));
+    }
+
+    [AvaloniaTheory]
+    [InlineData(16)]
+    [InlineData(32)]
+    [InlineData(48)]
+    [InlineData(64)]
+    [InlineData(128)]
+    [InlineData(256)]
+    public void TheLinuxIcon_IsTheIconsFrameOfItsSize(int size)
+    {
+        // The sizes packaging/linux/install.sh installs into hicolor (ICON_SIZES). They are files in
+        // the checkout, not assets, so nothing in the build reads them: a copy left behind when the
+        // artwork changes would only show in a Linux launcher.
+        string path = RepositoryRoot.File("packaging", "linux", "icons", $"enigma-markdown-editor-{size}.png");
+
+        Assert.Equal(Frame(Read("app.ico"), size), File.ReadAllBytes(path));
+    }
+
+    [AvaloniaFact]
     public void TheIcon_IsAlsoAFileBesideTheExecutable()
     {
         // Copied to the output root as a plain file so shortcuts and launchers can point at it; the
@@ -85,6 +112,31 @@ public sealed class AppIconTests
 
         Assert.True(File.Exists(path), $"{path} is missing.");
         Assert.Equal(Read("app.ico"), File.ReadAllBytes(path));
+    }
+
+    /// <summary>
+    /// The bytes of the icon's frame of <paramref name="size"/> pixels — a whole PNG when the frame is
+    /// PNG-compressed, as every frame of this icon is.
+    /// </summary>
+    private static byte[] Frame(byte[] icon, int size)
+    {
+        int count = BinaryPrimitives.ReadUInt16LittleEndian(icon.AsSpan(4));
+
+        for (int i = 0; i < count; i++)
+        {
+            ReadOnlySpan<byte> entry = icon.AsSpan(6 + (16 * i), 16);
+            int width = entry[0] == 0 ? 256 : entry[0];
+
+            if (width == size)
+            {
+                int length = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(entry[8..]));
+                int offset = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(entry[12..]));
+
+                return icon[offset..(offset + length)];
+            }
+        }
+
+        throw new InvalidOperationException($"The icon has no {size} px frame.");
     }
 
     private static byte[] Read(string asset)
