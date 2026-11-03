@@ -1,6 +1,6 @@
 # FEATURE-FB91 — Release 1.11.0
 
-**Status:** TODO
+**Status:** DONE
 **Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md`
 **Branch:** `feature/feature-fb91-release-1-11-0`, cut from the run branch at build time.
 **Run:** feature/2026-11-03-icons-msi-release

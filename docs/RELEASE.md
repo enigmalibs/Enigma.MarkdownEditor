@@ -308,6 +308,15 @@ part of what is checked.
 
 - [ ] **Windows, on a machine that is not the build machine**: the MSI installs, the desktop and
       start-menu shortcuts work, the application launches, and uninstall removes it cleanly.
+- [ ] **The MSI upgrades the previous one in place.** On a machine with the previous release
+      installed from its MSI, install the new one: *Apps & features* lists **one** Enigma Markdown
+      Editor, at `X.Y.Z`, and `Program Files (x86)\Enigma Markdown Editor` holds one application,
+      not two side by side. The shortcuts start the new version, and its About dialog says so.
+      `WindowsInstallerIdentityTests` pins the upgrade code in `buildmsi.ps1`, and FEATURE-1E34 read
+      it in a built MSI's `Upgrade` table, but only an installation shows Windows Installer acting
+      on it. 1.11.0 is the first MSI built by `buildmsi` and the first named *Enigma Markdown
+      Editor* (earlier ones said `Enigma.MarkdownEditor.Desktop`), so its upgrade over 1.10.0 is the
+      one that matters most. This is what `FEATURE-1E34` left open.
 - [ ] The installed version reads `X.Y.Z` in *Apps & features*, and on the executable itself:
       ```powershell
       (Get-Item "${env:ProgramFiles(x86)}\Enigma Markdown Editor\Enigma.MarkdownEditor.Desktop.exe").VersionInfo |
