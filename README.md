@@ -499,6 +499,7 @@ tests/
   Enigma.MarkdownEditor.Core.UnitTests
   Enigma.MarkdownEditor.Desktop.UnitTests
 build/                              release publish scripts (self-contained, artifacts/)
+packaging/icon/                     the icon's SVG masters (the .ico and PNGs are exported from them)
 packaging/windows/                  publish.ps1 / publish.bat (local win-x64 publish)
 packaging/linux/                    install.sh / uninstall.sh / publish.sh, desktop-entry template,
                                     icons, tarball packer

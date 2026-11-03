@@ -1,6 +1,6 @@
 # FEATURE-8156 — New icon set without the tile
 
-**Status:** TODO
+**Status:** DONE
 **Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md`
 **Branch:** `feature/feature-8156-new-icon-set`, cut from the run branch at build time.
 **Run:** feature/2026-11-03-icons-msi-release
