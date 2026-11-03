@@ -389,8 +389,9 @@ runtime to install first. Download them from the repository's Releases page.
 
 ### Windows
 
-Run the `.msi`. It installs to `%ProgramFiles%\Enigma Markdown Editor` and adds a desktop and start
-menu shortcut. Uninstall through *Apps & features* as usual.
+Run the `.msi`. It installs for all users to `Program Files (x86)\Enigma Markdown Editor` (the
+installer package is 32-bit; the application is 64-bit) and adds a desktop and start menu shortcut.
+A newer `.msi` upgrades an installed version in place. Uninstall through *Apps & features* as usual.
 
 ### Linux
 
@@ -467,6 +468,24 @@ To produce the release artifacts:
 Either runtime identifier can be published from either OS, and the scripts run under both Windows
 PowerShell 5.1 and PowerShell 7+. The full release procedure is [`docs/RELEASE.md`](docs/RELEASE.md).
 
+### Windows installer
+
+One command builds the MSI, on Windows, from anywhere:
+
+```
+packaging\windows\buildmsi.bat          # or buildmsi.ps1 -> artifacts/Enigma.MarkdownEditor.<version>.msi
+```
+
+**It starts with `git clean -dxf`**, which deletes every file git does not track — `bin/`, `obj/`,
+`artifacts/`, and any new file you have not added yet. It then runs the self-contained win-x64 publish
+above and packages it with the Enigma.Msi worker vendored in `packaging/windows/Enigma.Msi.Worker/`.
+The version is the csproj's `<Version>`, and the Enigma.Msi profile it built from is left beside the
+MSI. The MSI installs for all users, upgrades an earlier version in place, and adds a desktop and a
+start-menu shortcut.
+
+It needs git, the .NET 10 SDK and the WiX CLI (`dotnet tool install --global wix`) on the `PATH`, and
+checks for them before cleaning anything.
+
 ## Where your data lives
 
 One folder per user holds everything the application writes, so a backup is one folder to copy and a
@@ -500,10 +519,11 @@ tests/
   Enigma.MarkdownEditor.Desktop.UnitTests
 build/                              release publish scripts (self-contained, artifacts/)
 packaging/icon/                     the icon's SVG masters (the .ico and PNGs are exported from them)
-packaging/windows/                  publish.ps1 / publish.bat (local win-x64 publish)
+packaging/windows/                  publish.ps1 / publish.bat (local win-x64 publish),
+                                    buildmsi.ps1 / buildmsi.bat (the MSI), Enigma.Msi.Worker/
 packaging/linux/                    install.sh / uninstall.sh / publish.sh, desktop-entry template,
                                     icons, tarball packer
-msiProfiles/                        one committed .msipkg.json per released version
+msiProfiles/                        the MSI profiles of 1.0.0–1.10.0 (history; buildmsi writes its own)
 docs/
   RELEASE.md                        the release runbook
   roadmap.md                        every work item and its status

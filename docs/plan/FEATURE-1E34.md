@@ -1,6 +1,6 @@
 # FEATURE-1E34 — Windows MSI build script
 
-**Status:** IN PROGRESS
+**Status:** DONE
 **Type:** FEATURE · two phases · Roadmap: `docs/roadmap.md`
 **Branch:** one per phase, see below
 **Run:** feature/2026-11-03-icons-msi-release
@@ -105,7 +105,7 @@ The repository carries a copy of Enigma.Msi's worker CLI.
 ## PHASE02 — The buildmsi script
 
 **Branch:** `feature/feature-1e34-phase02-buildmsi-script`
-**Status:** TODO
+**Status:** DONE
 
 ### Steps
 

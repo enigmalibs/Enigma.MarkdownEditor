@@ -6,12 +6,11 @@ artifacts, both self-contained, attached to a GitHub Release:
 
 | Artifact | Built by |
 |---|---|
-| `EnigmaMarkdownEditor.msi` (win-x64) | `build/publish.ps1` → Enigma.Msi |
+| `Enigma.MarkdownEditor.X.Y.Z.msi` (win-x64) | `packaging/windows/buildmsi.ps1` (`build/publish.ps1` → Enigma.Msi) |
 | `EnigmaMarkdownEditor-X.Y.Z-linux-x64.tar.gz` | `build/publish.ps1` → `packaging/linux/pack-linux.ps1` |
 
 Replace `X.Y.Z` with the version being released (e.g. `1.0.0`) throughout. It lives in `<Version>` in
-**both** `src/*` project files. Run every command **from the repository root** — the MSI profile's
-paths are repo-root-relative.
+**both** `src/*` project files. Run every command **from the repository root**.
 
 There is no CI. Every build, and both platform verifications, happen locally — which is why §2 is a
 manual checklist rather than a pipeline, and why it is not optional.
@@ -136,12 +135,13 @@ On the release branch, before merging:
       pin the markup and the dialog's configuration, but no test can set two applications side by
       side. This is what `FEATURE-3185` and `FEATURE-982C` left open.
 - [ ] **`app.ico` sits beside the executable.** `artifacts/publish/win-x64/app.ico` exists after
-      §4's publish, and so does `app.ico` in the installed `%ProgramFiles%\Enigma Markdown Editor`
-      after an MSI install. Both are the current icon. `AppIconTests` pins the build output's copy
+      §4's MSI build, and so does `app.ico` in the installed `Program Files (x86)\Enigma Markdown
+      Editor` after an MSI install. Both are the current icon. `AppIconTests` pins the build output's copy
       byte for byte; the publish folder and the installer are this check's. This is what
       `FEATURE-7CE4` left open.
-- [ ] `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` committed — see §4 for the clone
-      rule.
+- [ ] **No MSI profile to commit.** Since 1.11.0 `packaging/windows/buildmsi.ps1` writes the profile
+      for each build from `<Version>`; `msiProfiles/` holds the profiles of 1.0.0–1.10.0 only, as
+      history. See §4.
 
 ## 2. Manual Linux verification
 
@@ -236,66 +236,69 @@ git push origin X.Y.Z
 ## 4. Build the artifacts
 
 Both start from a publish. The publish output is what actually ships — the MSI harvests it and the
-tarball wraps it — so a stale `artifacts/publish/` silently packages the previous version. The
-scripts clean it for you unless you pass `-NoClean`. (`packaging/windows/publish.*` and
-`packaging/linux/publish.sh` are not these: they publish a framework-dependent ReadyToRun build into
-`bin/` for local use, and nothing here reads their output.)
+tarball wraps it — so a stale `artifacts/publish/` silently packages the previous version.
+`build/publish.ps1` cleans its own output unless you pass `-NoClean`. (`packaging/windows/publish.*`
+and `packaging/linux/publish.sh` are not these: they publish a framework-dependent ReadyToRun build
+into `bin/` for local use, and nothing here reads their output.)
+
+**Build the MSI first.** `buildmsi` starts with `git clean -dxf`, which deletes all of `artifacts/` —
+a tarball built before it included:
+
+```bat
+packaging\windows\buildmsi.bat        :: -> artifacts\Enigma.MarkdownEditor.X.Y.Z.msi
+```
 
 ```bash
-./build/publish.ps1 -Rid win-x64      # -> artifacts/publish/win-x64
 ./build/publish.ps1 -Rid linux-x64    # -> artifacts/publish/linux-x64
 ./packaging/linux/pack-linux.ps1      # -> artifacts/EnigmaMarkdownEditor-X.Y.Z-linux-x64.tar.gz
 ```
 
-Both scripts run under Windows PowerShell 5.1 and PowerShell 7+, and either runtime identifier can be
-published from either OS. `artifacts/` is git-ignored, so none of this pollutes the tree.
+The PowerShell scripts run under Windows PowerShell 5.1 and PowerShell 7+, and either runtime
+identifier can be published from either OS. `artifacts/` is git-ignored, so none of this pollutes the
+tree.
 
 ### The MSI
 
-Open `msiProfiles/Enigma.MarkdownEditor.Desktop.X.Y.Z.msipkg.json` in **Enigma.Msi.Desktop** and
-build it. The profile is that application's native `.msipkg.json` format, so it opens, validates and
-builds without anything being added to this repository — which is why this repo takes no dependency
-on Enigma.Msi.
+`packaging\windows\buildmsi.bat` (or `buildmsi.ps1`, which it runs with `-ExecutionPolicy Bypass`)
+builds the installer in one command, from any directory:
 
-**Launch it from the repository root.** Every path in the profile is relative, and Enigma.Msi
-resolves them against its own working directory — it does not rebase them onto the profile's folder.
-Started from its start-menu shortcut it will report `install.releasePath: Directory does not exist.`
-and four more like it. From a PowerShell prompt at the repository root:
+1. It checks that `git`, `dotnet` and `wix` are on the `PATH` and that the vendored worker is there,
+   **before** anything is cleaned. It reads `<Version>` from the Desktop csproj and stops if it is not
+   `X.Y.Z` or if the Core csproj says otherwise.
+2. `git clean -dxf`. **Every file git does not track is deleted**, ignored ones included: `bin/`,
+   `obj/`, `artifacts/`, `.vs/`, and any new file you have not added yet. Commit or stash first.
+3. `build/publish.ps1 -Rid win-x64`: the self-contained publish, into `artifacts/publish/win-x64`.
+4. It writes `artifacts/Enigma.MarkdownEditor.X.Y.Z.msipkg.json`, an Enigma.Msi profile with absolute
+   paths, and runs the vendored worker (`packaging/windows/Enigma.Msi.Worker/`, Enigma.Msi 1.7.0) on
+   it. The result is `artifacts/Enigma.MarkdownEditor.X.Y.Z.msi`, uncompressed, so it builds fast.
 
-```powershell
-Start-Process "$env:ProgramFiles\Enigma.Msi\Enigma.Msi.Desktop.exe" -WorkingDirectory (Get-Location)
-```
+Every failure prints one `buildmsi: <reason>` line and exits non-zero, with the failing tool's exit
+code when there is one. It needs Windows, the .NET 10 SDK and the WiX CLI
+(`dotnet tool install --global wix`; WiX 7 also wants `wix eula accept wix7` once).
 
-The paths stay relative deliberately: the profile is committed and cloned by every future release,
-so it must not carry this machine's checkout path.
+The MSI installs "Enigma Markdown Editor" for all users in `%ProgramFiles%\Enigma Markdown Editor`,
+with a desktop and a start-menu shortcut. Enigma.Msi builds a 32-bit package, so on 64-bit Windows
+`%ProgramFiles%` is `Program Files (x86)`; the application itself is the win-x64 publish. Each build
+gets a new product code.
 
-Building an MSI needs Windows and the WiX CLI (`dotnet tool install --global wix`).
+#### The Windows installer's identity
 
-The profile's `releasePath` is `artifacts\publish\win-x64` — the self-contained publish folder, not
-`bin\Release\net10.0`. That is deliberate: the raw build output carries `runtimes/` for every
-platform Skia and HarfBuzz support, which the publish step has already resolved down to win-x64.
-**Run the win-x64 publish before building the MSI**, every time.
+The upgrade code `a7b550b9-1338-458f-bf2b-66dcf1d25380` is a constant in `buildmsi.ps1`. It is the
+application's permanent identity in Windows Installer, the same in every MSI since 1.0.0: it is what
+makes a new version replace the installed one. Change it and Windows Installer treats the new release
+as an unrelated product: the old version is never upgraded, only accumulated alongside.
+`WindowsInstallerIdentityTests` pins it, with the product name and the executable.
 
-#### The profile clone rule
-
-Each version gets its **own committed profile**. To make the next one, copy the most recent
-`msiProfiles/Enigma.MarkdownEditor.Desktop.*.msipkg.json` and change exactly three things:
-
-| Field | Rule |
-|---|---|
-| `upgradeCode` | **Keep verbatim.** It is the application's permanent identity. Change it and Windows Installer treats the new release as an unrelated product: the old version is never upgraded, only accumulated alongside. |
-| `productId` | **A new GUID for every version**, from a real generator — `[guid]::NewGuid()` on Windows, `uuidgen` elsewhere. Never hand-written. |
-| `version` | The release `X.Y.Z`, matching `<Version>` in the Desktop csproj. |
-
-Everything else — `install`, `scope`, `compression`, `output`, `controlPanel`, `shortcuts` — carries
-over unchanged.
+The version comes from the csproj and the product code is drawn per build, so a release edits nothing
+in the script. Up to 1.10.0 each version had a hand-cloned profile in `msiProfiles/`; those files stay
+as the record of what shipped, and no new one is added.
 
 ## 5. Publish the GitHub Release
 
 Create a release against the `X.Y.Z` tag, with notes matching that section of `RELEASENOTES.md`, and
 attach **both** artifacts:
 
-- `artifacts\EnigmaMarkdownEditor.msi`
+- `artifacts\Enigma.MarkdownEditor.X.Y.Z.msi`
 - `artifacts/EnigmaMarkdownEditor-X.Y.Z-linux-x64.tar.gz`
 
 ## 6. Post-release verification
@@ -307,7 +310,7 @@ part of what is checked.
       start-menu shortcuts work, the application launches, and uninstall removes it cleanly.
 - [ ] The installed version reads `X.Y.Z` in *Apps & features*, and on the executable itself:
       ```powershell
-      (Get-Item "$env:ProgramFiles\Enigma Markdown Editor\Enigma.MarkdownEditor.Desktop.exe").VersionInfo |
+      (Get-Item "${env:ProgramFiles(x86)}\Enigma Markdown Editor\Enigma.MarkdownEditor.Desktop.exe").VersionInfo |
         Select-Object FileVersion, ProductVersion
       ```
       `FileVersion` is `X.Y.Z.0`. `ProductVersion` is the informational version and reads
