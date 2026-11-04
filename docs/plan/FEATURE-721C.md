@@ -1,6 +1,6 @@
 # FEATURE-721C — Release 1.12.0
 
-**Status:** TODO
+**Status:** DONE
 **Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md`
 **Branch:** `feature/feature-721c-release-1-12-0`, cut from the run branch at build time.
 **Run:** feature/2026-11-04-icons-release-1-12
