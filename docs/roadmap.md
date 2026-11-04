@@ -108,6 +108,8 @@
 | - PHASE01    | Vendor the Enigma.Msi worker CLI      | DONE      | (in FEATURE-1E34.md)      |
 | - PHASE02    | The buildmsi script                   | DONE      | (in FEATURE-1E34.md)      |
 | FEATURE-FB91 | Release 1.11.0                        | DONE      | docs/plan/FEATURE-FB91.md |
+| FEATURE-E208 | Icon set that fills the frame         | DONE      | docs/plan/FEATURE-E208.md |
+| FEATURE-721C | Release 1.12.0                        | DONE      | docs/plan/FEATURE-721C.md |
 
 > `BUG-7675` abandoned — not reproducible. The sticky column is correct over the real control: `j`/`k`
 > through a short line returns to the column the run started in, and so do the arrow keys, a count,
