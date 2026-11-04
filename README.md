@@ -7,10 +7,10 @@ tabbed [AvaloniaEdit](https://github.com/AvaloniaUI/AvaloniaEdit) editor with vi
 middle, and a live [Markdig](https://github.com/xoofx/markdig) preview on the right. Windows and
 Linux, self-contained — nothing to install alongside it.
 
-> **What's new in 1.11.0** — A new icon without the dark tile, and a Windows installer built by one
-> script (`packaging\windows\buildmsi.bat`) that still upgrades every earlier version in place. 1.10.0
-> brought the start without a splash screen, a dialog for every unhandled error, and the About dialog
-> of every Enigma app. See [RELEASENOTES.md](RELEASENOTES.md).
+> **What's new in 1.12.0** — The icon fills its frame, so the same mark reads larger in the taskbar
+> and the launcher. 1.11.0 brought the icon without the dark tile, and a Windows installer built by one
+> script (`packaging\windows\buildmsi.bat`) that still upgrades every earlier version in place. See
+> [RELEASENOTES.md](RELEASENOTES.md).
 
 ## Why
 

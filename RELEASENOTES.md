@@ -1,3 +1,43 @@
+# Enigma Markdown Editor v1.12.0 Release Notes
+
+A minor release about the icon. The mark is the same, drawn larger: it now fills its frame, so it
+reads bigger in the taskbar, the program menu and the Linux launcher. Nothing in your settings,
+workspaces or sessions changed shape, and none of them needs a migration.
+
+## Changes
+
+- **The icon fills its frame.** The blue outlined `M↓` box with the green arrow, on a transparent
+  background, is about 18 % larger: its longest side now spans the whole frame but for a thin margin,
+  where 1.11.0 left a wide one. The small sizes (16 to 32 px) are redrawn for the new size, still with
+  heavier lines. It is the same art in the window, the taskbar, the `.exe`, the About dialog, the MSI's
+  shortcuts and the Linux launcher, and its SVG masters in `packaging/icon/` are updated with it.
+
+## Dependencies
+
+- **Nothing moved.** The Avalonia set stays at 12.1.4, with `Enigma.Avalonia.Desktop` **1.3.0**:
+  Avalonia 12.1.5 is out, but `Enigma.Avalonia.Desktop` 1.3.0, still the latest, is built against
+  12.1.4, and the set moves only with it.
+- **Still held back:** `xunit.v3` stays at 3.2.2, although 4.0.2 is out, for the reason given in
+  1.10.0.
+- Nothing else is outdated (`dotnet list package --outdated`, 2026-11-04).
+
+## Compatibility
+
+- **Unchanged from 1.11.0.** Still **.NET 10** on **Avalonia 12.1.4**. Still **Windows x64** and
+  **Linux x64**, both shipped **self-contained**.
+- **The MSI upgrades an earlier one in place**, through the same upgrade code as every MSI since 1.0.0.
+  It is `Enigma.MarkdownEditor.1.12.0.msi`, built by `packaging\windows\buildmsi.bat` as in 1.11.0.
+- **The Linux tarball keeps its layout.** Only the icons' artwork changed.
+- **Windows may show the previous icon for a while** after the upgrade: the shell caches icons per
+  path. `ie4uinit.exe -show` refreshes the cache.
+- **Your data is read as it was left.** There is nothing to migrate, in either direction between
+  1.11.0 and 1.12.0.
+
+## Version
+
+- **1.12.0**: a SemVer MINOR release. It changes the icon's artwork. Nothing you depend on changed
+  incompatibly.
+
 # Enigma Markdown Editor v1.11.0 Release Notes
 
 A minor release about how the editor looks and how its Windows installer is made. The icon keeps its
