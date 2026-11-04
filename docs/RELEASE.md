@@ -116,16 +116,18 @@ On the release branch, before merging:
       build and check the window's title bar and its taskbar button, then `Alt`+`Tab`. Check the
       `.exe` in Explorer at the *Small*, *Medium* and *Extra large* views (these use the 16, 48 and
       256 px frames). Repeat with Windows switched to the other app/taskbar theme. The mark has no
-      tile behind it — a blue outlined `M↓` box with a green arrow on a transparent background — so
-      on both taskbars the blue outline and the green arrow must stand out by themselves, and at
-      16 px (the simplified small frames) the `M` and the arrow must still read as two marks. Open
+      tile behind it — a blue outlined `M↓` box with a green arrow on a transparent background — and
+      since 1.12.0 it fills its frame (16 to 240 of 256 units), so it reads larger than 1.11.0's at
+      the same size. On both taskbars the blue outline and the green arrow must stand out by
+      themselves, and at 16 px (the simplified small frames) the `M` and the arrow must still read
+      as two marks. Open
       the About dialog in both themes too: it shows the same mark, from `Assets/app-256.png`, and
       it must stand out from the dialog's background in each. Windows caches
       icons per path, so an `.exe` that still shows the previous icon after a rebuild is the cache
       (`ie4uinit.exe -show` refreshes it), not the build. `AppIconTests` checks the `.ico`'s frame
       set, and that the About PNG and the Linux PNGs are its frames byte for byte, but the headless
-      suite renders without Skia, so no test can say how the icon looks. This is what `FEATURE-EA38`
-      and `FEATURE-8156` left open; §2's desktop-menu item covers the Linux launcher.
+      suite renders without Skia, so no test can say how the icon looks. This is what `FEATURE-EA38`,
+      `FEATURE-8156` and `FEATURE-E208` left open; §2's desktop-menu item covers the Linux launcher.
 - [ ] **The main window comes first, and About reads as every Enigma app's.** Start the Release
       build: the main window is the first thing on screen, with nothing before it. Open the About
       dialog from the info button. It shows the icon, the name, the version, the build line and the

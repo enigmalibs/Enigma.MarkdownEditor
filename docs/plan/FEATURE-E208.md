@@ -1,6 +1,6 @@
 # FEATURE-E208 — Icon set that fills the frame
 
-**Status:** TODO
+**Status:** DONE
 **Type:** FEATURE · single phase · Roadmap: `docs/roadmap.md`
 **Branch:** `feature/feature-e208-icon-fills-frame`, cut from the run branch at build time.
 **Run:** feature/2026-11-04-icons-release-1-12

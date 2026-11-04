@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Enigma.MarkdownEditor application icon without the tile: MD-A2 in Branding/Apps/preview.html, Outline mark in the Soft palette.
+  Enigma.MarkdownEditor application icon without the tile, filling the frame (final3): MD-A2 in Branding/Apps/preview.html, Outline mark in the Soft palette.
+  The final2/ drawing scaled by 1.1852 and centred, its longest side spanning 16 to 240 of the 256-unit view box.
   The master for the 40 px frames and up; the 16 to 32 px frames come from enigma-markdown-editor-small.svg, simplified for their size.
-  Regenerate the SVGs, the PNG frames and the .ico with: python3 Branding/Apps/export.py final2
+  Regenerate the SVGs, the PNG frames and the .ico with: python3 Branding/Apps/export.py final3
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <g transform="translate(34.4 70.4) scale(0.9)">
-  <rect x="5" y="5" width="198" height="118" rx="12" fill="none" stroke="#6A9BF4" stroke-width="12"/>
-  <path d="M30 98V30h20l20 25 20-25h20v68H90V59L70 84 50 59v39z" fill="#6A9BF4"/>
-  <path d="M155 98l-30-33h20V30h20v35h20z" fill="#63C77D"/>
+  <g transform="translate(-23.7037 -23.7037) scale(1.1852)">
+    <g transform="translate(34.4 70.4) scale(0.9)">
+    <rect x="5" y="5" width="198" height="118" rx="12" fill="none" stroke="#6A9BF4" stroke-width="12"/>
+    <path d="M30 98V30h20l20 25 20-25h20v68H90V59L70 84 50 59v39z" fill="#6A9BF4"/>
+    <path d="M155 98l-30-33h20V30h20v35h20z" fill="#63C77D"/>
+    </g>
   </g>
 </svg>
